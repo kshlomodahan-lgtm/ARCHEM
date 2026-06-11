@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.angular/
+*.env
+!.env.example
+kendo-ui-license.txt

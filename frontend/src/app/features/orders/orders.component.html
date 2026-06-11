@@ -1,0 +1,227 @@
+<div class="orders-page">
+
+  <!-- ── Page Header ──────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1>הזמנות</h1>
+      <p>{{ gridData.length }} הזמנות מוצגות</p>
+    </div>
+    <button class="btn-save">✓ הזמנה חדשה</button>
+  </div>
+
+  <!-- ── KPI Strip ────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-card kpi-neutral">
+      <div class="kpi-icon-wrap kpi-icon-neutral">
+        <span class="kpi-mat-icon">inventory_2</span>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">הזמנות פתוחות</div>
+        <div class="kpi-value">{{ openCount() }}</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-warn">
+      <div class="kpi-icon-wrap kpi-icon-warn">
+        <span class="kpi-mat-icon">local_shipping</span>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">ממתינות למשלוח</div>
+        <div class="kpi-value">{{ awaitingShipment() }}</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-primary">
+      <div class="kpi-icon-wrap kpi-icon-primary">
+        <span class="kpi-mat-icon">monetization_on</span>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">עמלה צפויה (כולל)</div>
+        <div class="kpi-value">{{ expectedCommission() | number:'1.0-0' }}</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-success">
+      <div class="kpi-icon-wrap kpi-icon-success">
+        <span class="kpi-mat-icon">check_circle</span>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">עמלה שהתקבלה</div>
+        <div class="kpi-value">{{ receivedCommission() | number:'1.0-0' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toolbar ──────────────────────────────────────── -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="material-icons search-icon">search</span>
+      <input class="search-input" type="text" placeholder="חיפוש ספק, לקוח, מספר הזמנה..."
+             [value]="searchTerm" (input)="onSearch($any($event.target).value)" />
+    </div>
+
+    <select class="filter-select" [(ngModel)]="filterSupplier" (ngModelChange)="onFilterChange()">
+      <option value="">כל הספקים</option>
+      @for (s of supplierOptions(); track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
+      <option value="">כל הסטטוסים</option>
+      <option value="active">פעיל</option>
+      <option value="important">חשוב</option>
+      <option value="frozen">מוקפא</option>
+      <option value="frame">מסגרת</option>
+      <option value="cancelled">בוטל</option>
+    </select>
+
+    <select class="filter-select" [(ngModel)]="filterYear" (ngModelChange)="onFilterChange()">
+      <option value="">כל השנים</option>
+      @for (y of yearOptions(); track y) {
+        <option [value]="y">{{ y }}</option>
+      }
+    </select>
+
+    @if (hasActiveFilters()) {
+      <button class="btn-clear-filters" (click)="clearFilters()" title="נקה פילטרים">
+        <span class="material-icons">filter_list_off</span>
+        נקה
+      </button>
+    }
+  </div>
+
+  <!-- ── Grid ─────────────────────────────────────────── -->
+  <kendo-grid
+    [data]="{ data: pagedData, total: gridData.length }"
+    [skip]="skip"
+    [pageSize]="pageSize"
+    [pageable]="{ buttonCount: 5, info: true, type: 'numeric', pageSizes: [10, 25, 50] }"
+    [sortable]="{ mode: 'single', allowUnsort: false }"
+    [sort]="sort"
+    [reorderable]="true"
+    [resizable]="true"
+    [selectable]="{ mode: 'multiple', checkboxOnly: true }"
+    [columnMenu]="true"
+    [rowClass]="rowClass"
+    scrollable="none"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+    (cellClick)="onCellClick($event)"
+    class="orders-grid">
+
+    <!-- Checkbox -->
+    <kendo-grid-checkbox-column [width]="44" [showSelectAll]="true" />
+
+    <!-- Status -->
+    <kendo-grid-column title="" field="status" [width]="52"
+      [sortable]="false" [resizable]="false" [columnMenu]="false">
+      <ng-template kendoGridCellTemplate let-o>
+        <span class="status-dot" [ngClass]="'status-' + o.status"
+              [title]="statusLabel(o.status)"></span>
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Order Number -->
+    <kendo-grid-column title="הזמנה" field="orderNumber" [width]="120">
+      <ng-template kendoGridCellTemplate let-o>
+        <div class="order-badge-wrap">
+          <span class="order-badge" [class.badge-frame]="o.isFrameContract">
+            {{ orderBadge(o) }}
+          </span>
+          @if (o.isFrameContract) {
+            <span class="frame-tag" title="חוזה מסגרת">מ</span>
+          }
+        </div>
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Supplier / Customer -->
+    <kendo-grid-column title="ספק ← לקוח" field="supplierShort">
+      <ng-template kendoGridCellTemplate let-o>
+        <div class="entity-cell">
+          <span class="entity-supplier">{{ o.supplierShort }}</span>
+          <span class="entity-arrow">→</span>
+          <span class="entity-customer">{{ o.customerShort }}</span>
+        </div>
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Domain -->
+    <kendo-grid-column title="תחום" field="salesDomain" [width]="80">
+      <ng-template kendoGridCellTemplate let-o>
+        <span class="domain-badge">{{ o.salesDomainPrefix }}</span>
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Total Value -->
+    <kendo-grid-column title="ערך" field="totalValue" [width]="130">
+      <ng-template kendoGridCellTemplate let-o>
+        <div class="value-cell">
+          <span class="value-num">{{ o.totalValue | number:'1.0-0' }}</span>
+          <span class="value-cur">{{ o.currency }}</span>
+        </div>
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Commission -->
+    <kendo-grid-column title="עמלה" field="commissionAmount" [width]="140">
+      <ng-template kendoGridCellTemplate let-o>
+        <div class="commission-cell">
+          <span class="comm-badge" [ngClass]="'comm-' + o.commissionType.toLowerCase()">
+            {{ commBadge(o) }}
+          </span>
+          <span class="comm-amount">
+            {{ o.commissionAmount | number:'1.0-0' }}
+            <span class="comm-cur">{{ o.currency }}</span>
+          </span>
+        </div>
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Delivery Date -->
+    <kendo-grid-column title="אספקה" field="deliveryDate" [width]="105">
+      <ng-template kendoGridCellTemplate let-o>
+        @if (o.deliveryDate) {
+          <span class="date-chip" [ngClass]="dateClass(o.deliveryDate)">
+            {{ o.deliveryDate | date:'dd/MM/yy' }}
+          </span>
+        } @else {
+          <span class="text-muted">—</span>
+        }
+      </ng-template>
+    </kendo-grid-column>
+
+    <!-- Actions -->
+    <kendo-grid-column title="" [width]="64"
+      [sortable]="false" [resizable]="false" [columnMenu]="false">
+      <ng-template kendoGridCellTemplate let-o>
+        <button class="grid-act-btn" title="פרטי הזמנה"
+                (click)="selectedOrder.set(o); $event.stopPropagation()">
+          <span class="material-icons">chevron_left</span>
+        </button>
+      </ng-template>
+    </kendo-grid-column>
+
+    <kendo-grid-messages
+      pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="הזמנות"
+      columnMenuFilter="סנן" columnMenuSort="מיון" columnMenuColumns="עמודות"
+      columnMenuSortAscending="עולה" columnMenuSortDescending="יורד"
+      selectionCheckboxLabel="בחר שורה" selectAllCheckboxLabel="בחר הכל"
+      noRecords="לא נמצאו הזמנות" loading="טוען..." />
+  </kendo-grid>
+
+</div>
+
+<!-- ── Drawer backdrop ───────────────────────────────── -->
+<div class="drawer-backdrop"
+     [class.visible]="!!selectedOrder()"
+     (click)="closeDrawer()">
+</div>
+
+<!-- ── Drawer panel ──────────────────────────────────── -->
+<div class="drawer-panel" [class.open]="!!selectedOrder()">
+  @if (selectedOrder()) {
+    <app-order-drawer
+      [order]="selectedOrder()!"
+      (closed)="closeDrawer()">
+    </app-order-drawer>
+  }
+</div>

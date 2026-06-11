@@ -1,0 +1,259 @@
+@use '@angular/material' as mat;
+
+// ── Material 3 Theme ───────────────────────────────────────
+html {
+  height: 100%;
+  @include mat.theme((
+    color: (
+      primary:  mat.$blue-palette,
+      tertiary: mat.$cyan-palette,
+    ),
+    typography: 'Noto Sans Hebrew',
+    density: 0,
+  ));
+
+  // ── SQUADFLOW Design Tokens ──────────────────────────────
+  --sf-primary:       #0D47FF;
+  --sf-primary-hover: #0a35c4;
+  --sf-primary-light: #e8eeff;
+  --sf-accent:        #00C2FF;
+
+  --sf-bg:            #f8fafc;
+  --sf-bg-card:       #ffffff;
+  --sf-bg-hover:      #f1f5f9;
+  --sf-sidebar-bg:    #ffffff;
+  --sf-sidebar-w:     220px;
+
+  --sf-border:        #e2e8f0;
+  --sf-border-focus:  #0D47FF;
+
+  --sf-text:          #0f172a;
+  --sf-text-secondary:#64748b;
+  --sf-text-muted:    #94a3b8;
+
+  --sf-success:       #10b981;
+  --sf-warning:       #f59e0b;
+  --sf-danger:        #ef4444;
+
+  --sf-radius:        10px;
+  --sf-radius-lg:     14px;
+  --sf-shadow:        0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --sf-shadow-md:     0 4px 16px rgba(0,0,0,.08);
+
+  // Grid header (scheme-aware)
+  --sf-grid-hd-bg:     #e8f4fb;
+  --sf-grid-hd-color:  #1e3a5f;
+  --sf-grid-hd-border: #c8dff0;
+}
+
+// ── Body ───────────────────────────────────────────────────
+body {
+  background: var(--sf-bg);
+  color: var(--sf-text);
+  font-family: 'Noto Sans Hebrew', 'Segoe UI', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  height: 100%;
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+// ── Material overrides ─────────────────────────────────────
+.mat-mdc-form-field { direction: rtl; }
+
+.mat-mdc-table {
+  background: var(--sf-bg-card);
+  border-radius: var(--sf-radius-lg);
+  overflow: hidden;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell { background: var(--sf-bg-hover); }
+
+.mat-mdc-header-cell {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--sf-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--sf-border) !important;
+}
+
+.mat-mdc-cell {
+  color: var(--sf-text);
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--sf-border) !important;
+}
+
+// ── Utility ────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+
+  h1 { font-size: 1.3rem; font-weight: 700; color: var(--sf-text); margin: 0; }
+  p  { font-size: 0.83rem; color: var(--sf-text-secondary); margin: 4px 0 0; }
+}
+
+.card {
+  background: var(--sf-bg-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  box-shadow: var(--sf-shadow);
+}
+
+// ── Kendo hierarchy column — hide globally ─────────────────
+// kendoGridDetailTemplate always injects k-hierarchy-col/cell.
+// clip-path: inset(0) clips even when overflow: visible is set.
+col.k-hierarchy-col {
+  width: 0 !important;
+}
+
+.k-hierarchy-cell {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  opacity: 0 !important;
+  transition: none !important;
+}
+
+.k-hierarchy-cell *,
+.k-hierarchy-cell::before,
+.k-hierarchy-cell::after {
+  display: none !important;
+}
+
+// ── Scrollbar ──────────────────────────────────────────────
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+// ── Color Schemes ──────────────────────────────────────────
+// blue = default (already in :root, no override needed)
+
+html[data-scheme="teal"] {
+  --sf-primary:        #0891b2;
+  --sf-primary-hover:  #0e7490;
+  --sf-primary-light:  #e0f7fa;
+  --sf-accent:         #06b6d4;
+  --sf-border-focus:   #0891b2;
+  --sf-grid-hd-bg:     #e0f7fa;
+  --sf-grid-hd-color:  #0c4a6e;
+  --sf-grid-hd-border: #bae6fd;
+}
+
+html[data-scheme="purple"] {
+  --sf-primary:        #7c3aed;
+  --sf-primary-hover:  #6d28d9;
+  --sf-primary-light:  #ede9fe;
+  --sf-accent:         #a78bfa;
+  --sf-border-focus:   #7c3aed;
+  --sf-grid-hd-bg:     #f3f0ff;
+  --sf-grid-hd-color:  #3b0764;
+  --sf-grid-hd-border: #ddd6fe;
+}
+
+html[data-scheme="green"] {
+  --sf-primary:        #059669;
+  --sf-primary-hover:  #047857;
+  --sf-primary-light:  #d1fae5;
+  --sf-accent:         #34d399;
+  --sf-border-focus:   #059669;
+  --sf-grid-hd-bg:     #ecfdf5;
+  --sf-grid-hd-color:  #064e3b;
+  --sf-grid-hd-border: #a7f3d0;
+}
+
+html[data-scheme="rose"] {
+  --sf-primary:        #e11d48;
+  --sf-primary-hover:  #be123c;
+  --sf-primary-light:  #ffe4e6;
+  --sf-accent:         #fb7185;
+  --sf-border-focus:   #e11d48;
+  --sf-grid-hd-bg:     #fff1f2;
+  --sf-grid-hd-color:  #881337;
+  --sf-grid-hd-border: #fecdd3;
+}
+
+html[data-scheme="amber"] {
+  --sf-primary:        #d97706;
+  --sf-primary-hover:  #b45309;
+  --sf-primary-light:  #fef3c7;
+  --sf-accent:         #fbbf24;
+  --sf-border-focus:   #d97706;
+  --sf-grid-hd-bg:     #fffbeb;
+  --sf-grid-hd-color:  #78350f;
+  --sf-grid-hd-border: #fde68a;
+}
+
+// ── Dark Theme ─────────────────────────────────────────────
+html[data-theme="dark"] {
+  --sf-bg:             #0f172a;
+  --sf-bg-card:        #1e293b;
+  --sf-bg-hover:       #2d3748;
+  --sf-sidebar-bg:     #1e293b;
+  --sf-border:         #334155;
+  --sf-border-focus:   #4d7cff;
+  --sf-text:           #f1f5f9;
+  --sf-text-secondary: #94a3b8;
+  --sf-text-muted:     #475569;
+  --sf-primary-light:  #1e3a5f;
+  --sf-shadow:         0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --sf-shadow-md:      0 4px 16px rgba(0,0,0,.5);
+
+  color-scheme: dark;
+
+  // Kendo Grid — dark overrides
+  .k-grid {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+  }
+
+  .k-grid-header,
+  .k-grid-header th.k-header {
+    background: #162032 !important;
+    color: #93c5fd !important;
+    border-color: #334155 !important;
+  }
+
+  .k-grid-header .k-grid-header-wrap { background: #162032 !important; }
+
+  .k-table-td {
+    background: #1e293b !important;
+    border-color: #2d3748 !important;
+    color: #f1f5f9 !important;
+  }
+
+  .k-table-row:hover .k-table-td { background: #2d3748 !important; }
+
+  .k-pager {
+    background: #162032 !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+  }
+
+  .k-pager .k-button { color: #94a3b8; background: transparent; border-color: transparent; }
+  .k-pager .k-button:hover { background: #334155 !important; color: #f1f5f9 !important; }
+  .k-pager .k-selected { background: var(--sf-primary) !important; color: #fff !important; }
+
+  .k-pager .k-dropdown-list .k-input { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+
+  .k-sort-icon { color: #93c5fd; }
+  .k-checkbox  { accent-color: var(--sf-primary); background: #1e293b; }
+
+  .k-column-resizer { background: #334155; }
+
+  // Material components in dark mode
+  .mat-mdc-progress-spinner { --mdc-circular-progress-active-indicator-color: var(--sf-primary); }
+}

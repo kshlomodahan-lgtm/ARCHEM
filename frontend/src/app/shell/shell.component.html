@@ -1,0 +1,74 @@
+<div class="shell" [class.sidebar-closed]="!sidebarOpen">
+
+  <!-- ── Sidebar ─────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <div class="sidebar-brand">
+      @if (sidebarOpen) {
+        <div class="brand-logo" dir="ltr"><span class="sq">ARC</span><span class="fl">HEM</span></div>
+        <div class="brand-tagline">מערכת עמלות</div>
+      } @else {
+        <div class="brand-logo" dir="ltr"><span class="fl">AC</span></div>
+      }
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.route) {
+        <a class="nav-item"
+           [routerLink]="item.route"
+           routerLinkActive="active"
+           [matTooltip]="!sidebarOpen ? item.label : ''"
+           matTooltipPosition="after">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          @if (sidebarOpen) { <span>{{ item.label }}</span> }
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button mat-icon-button (click)="sidebarOpen = !sidebarOpen"
+              [matTooltip]="sidebarOpen ? 'כווץ' : 'הרחב'">
+        <mat-icon>{{ sidebarOpen ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
+      <button mat-icon-button (click)="logout()" matTooltip="התנתק">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ────────────────────────────────────── -->
+  <div class="main-area">
+
+    <header class="topbar">
+      <div class="topbar-start">
+        <div class="scheme-picker">
+          @for (s of theme.schemes; track s.id) {
+            <button class="scheme-dot"
+                    [style.background]="s.primary"
+                    [class.active]="theme.scheme() === s.id"
+                    [title]="s.label"
+                    (click)="theme.setScheme(s.id)">
+            </button>
+          }
+        </div>
+        <div class="topbar-sep"></div>
+        <button class="topbar-btn"
+                (click)="theme.toggleMode()"
+                [title]="theme.isDark() ? 'מצב יום' : 'מצב לילה'">
+          <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+      </div>
+      <div class="topbar-end">
+        <div class="user-chip">
+          <div class="user-avatar">{{ auth.user()?.fullName?.charAt(0) }}</div>
+          <span class="user-name">{{ auth.user()?.fullName }}</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <router-outlet />
+    </main>
+
+  </div>
+</div>

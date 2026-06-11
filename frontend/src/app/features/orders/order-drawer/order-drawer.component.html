@@ -1,0 +1,409 @@
+<div class="drawer-wrap">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <div class="dh">
+    <div class="dh-top-bar"></div>
+
+    <div class="dh-content">
+      <div class="dh-row1">
+        <div class="dh-badge-row">
+          <span class="dh-order-no">{{ orderBadge() }}</span>
+          <span class="dh-status-chip" [ngClass]="'chip-' + order.status">
+            {{ statusLabels[order.status] }}
+          </span>
+          @if (order.isFrameContract) {
+            <span class="dh-frame-chip">מסגרת</span>
+          }
+        </div>
+        <button class="dh-close" (click)="close()" title="סגור">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="dh-entities">
+        <span class="dh-supplier">{{ order.supplierFull }}</span>
+        <mat-icon class="dh-arr">arrow_back</mat-icon>
+        <span class="dh-customer">{{ order.customerFull }}</span>
+      </div>
+
+      <div class="dh-meta-row">
+        <span class="dh-meta-item">
+          <mat-icon>calendar_today</mat-icon>
+          {{ dateStr(order.orderDate) }}
+        </span>
+        <span class="dh-meta-item">
+          <mat-icon>person</mat-icon>
+          {{ order.salesPerson }}
+        </span>
+        <span class="dh-meta-item">
+          <mat-icon>domain</mat-icon>
+          {{ order.salesDomain }}
+        </span>
+        <span class="dh-meta-item">
+          <mat-icon>account_balance_wallet</mat-icon>
+          {{ order.currency }}
+        </span>
+      </div>
+
+      <!-- Finance summary chips -->
+      <div class="dh-fin-row">
+        <div class="dh-fin-chip">
+          <span class="dfc-label">ערך כולל</span>
+          <span class="dfc-value">{{ order.totalValue | number:'1.0-0' }} {{ order.currency }}</span>
+        </div>
+        <div class="dh-fin-chip dfc-commission">
+          <span class="dfc-label">עמלה</span>
+          <span class="dfc-value">{{ order.commissionAmount | number:'1.0-0' }} ({{ commDetail() }})</span>
+        </div>
+        @if (order.financial?.commissionReceived) {
+          <div class="dh-fin-chip dfc-received">
+            <mat-icon>check_circle</mat-icon>
+            <span class="dfc-label">התקבלה</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ───────────────────────────────────────── -->
+  <div class="drawer-tabs">
+    <button class="dtab" [class.active]="tab() === 'details'"  (click)="tab.set('details')">
+      <mat-icon>info_outline</mat-icon> פרטים
+    </button>
+    <button class="dtab" [class.active]="tab() === 'lines'"    (click)="tab.set('lines')">
+      <mat-icon>list_alt</mat-icon> שורות
+      <span class="tab-cnt">{{ order.lines.length }}</span>
+    </button>
+    <button class="dtab" [class.active]="tab() === 'shipment'" (click)="tab.set('shipment')">
+      <mat-icon>local_shipping</mat-icon> משלוח
+    </button>
+    <button class="dtab" [class.active]="tab() === 'finance'"  (click)="tab.set('finance')">
+      <mat-icon>receipt_long</mat-icon> פיננסים
+    </button>
+  </div>
+
+  <!-- ── Body ───────────────────────────────────────── -->
+  <div class="drawer-body">
+
+    <!-- ▸ DETAILS ──────────────────────────────────── -->
+    @if (tab() === 'details') {
+      <div class="details-grid">
+        <div class="dg-item">
+          <span class="dg-label">תאריך הזמנה</span>
+          <span class="dg-value">{{ dateStr(order.orderDate) }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">תאריך אספקה</span>
+          <span class="dg-value">{{ dateStr(order.deliveryDate) }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">תחום מכירה</span>
+          <span class="dg-value">{{ order.salesDomain }} ({{ order.salesDomainPrefix }})</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">איש מכירות</span>
+          <span class="dg-value">{{ order.salesPerson }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">הפניית לקוח</span>
+          <span class="dg-value dg-mono">{{ order.customerRef || '—' }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">מטבע</span>
+          <span class="dg-value">{{ order.currency }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">סוג עמלה</span>
+          <span class="dg-value">{{ commLabels[order.commissionType] }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">שיעור/סכום</span>
+          <span class="dg-value">{{ commDetail() }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">חוזה מסגרת</span>
+          <span class="dg-value">{{ order.isFrameContract ? 'כן' : 'לא' }}</span>
+        </div>
+        <div class="dg-item">
+          <span class="dg-label">סטטוס</span>
+          <span class="dg-value">
+            <span class="dg-status-dot" [ngClass]="'dot-' + order.status"></span>
+            {{ statusLabels[order.status] }}
+          </span>
+        </div>
+      </div>
+    }
+
+    <!-- ▸ LINES ─────────────────────────────────────── -->
+    @if (tab() === 'lines') {
+      <div class="lines-section">
+        <!-- Overall dispatch progress -->
+        <div class="overall-dispatch">
+          <div class="od-labels">
+            <span>ניפוק כולל</span>
+            <span class="od-pct">{{ totalDispatchPct() }}%</span>
+          </div>
+          <div class="od-bar">
+            <div class="od-fill" [style.width.%]="totalDispatchPct()"></div>
+          </div>
+          <div class="od-sub">{{ totalQtyDispatched() | number:'1.0-0' }} / {{ totalQtyOrdered() | number:'1.0-0' }} יח'</div>
+        </div>
+
+        <!-- Lines table -->
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th>קב'/שו'</th>
+                <th>מק"ט ספק</th>
+                <th>תיאור</th>
+                <th class="ta-num">כמות</th>
+                <th>ניפוק</th>
+                <th class="ta-num">עמלה</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of order.lines; track l.orderLineId) {
+                <tr>
+                  <td class="ta-center">
+                    <span class="group-badge">{{ l.groupNo }}.{{ l.lineNo }}</span>
+                  </td>
+                  <td>
+                    <span class="sku-mono">{{ l.supplierSKU }}</span>
+                    @if (l.customerSKU) {
+                      <div class="sku-customer">{{ l.customerSKU }}</div>
+                    }
+                  </td>
+                  <td class="line-desc">{{ l.description }}</td>
+                  <td class="ta-num">
+                    {{ l.qtyOrdered | number:'1.0-0' }}
+                    <span class="uom-badge">{{ l.uom }}</span>
+                  </td>
+                  <td>
+                    <div class="dispatch-progress">
+                      <div class="dp-bar">
+                        <div class="dp-fill" [style.width.%]="dispatchPct(l)"
+                             [class.dp-full]="dispatchPct(l) === 100"
+                             [class.dp-partial]="dispatchPct(l) > 0 && dispatchPct(l) < 100"
+                             [class.dp-none]="dispatchPct(l) === 0">
+                        </div>
+                      </div>
+                      <span class="dp-label">{{ l.qtyDispatched | number:'1.0-0' }}</span>
+                    </div>
+                  </td>
+                  <td class="ta-num">
+                    @if (l.commissionAmount > 0) {
+                      <span class="line-comm">{{ l.commissionAmount | number:'1.0-0' }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ▸ SHIPMENT ──────────────────────────────────── -->
+    @if (tab() === 'shipment') {
+      <div class="shipment-section">
+        @if (order.shipment) {
+
+          <!-- Timeline -->
+          <div class="shipment-timeline">
+            <div class="st-step" [class.done]="shipmentStepDone('oc')">
+              <div class="st-dot"></div>
+              <div class="st-content">
+                <div class="st-label">אישור הזמנה (OC)</div>
+                <div class="st-date">{{ dateStr(order.shipment.supplierOCDate) }}</div>
+                @if (order.shipment.supplierOC) {
+                  <div class="st-ref">{{ order.shipment.supplierOC }}</div>
+                }
+              </div>
+            </div>
+            <div class="st-line" [class.done]="shipmentStepDone('oc')"></div>
+
+            <div class="st-step" [class.done]="shipmentStepDone('etd')">
+              <div class="st-dot"></div>
+              <div class="st-content">
+                <div class="st-label">יציאה מהמפעל (ETD)</div>
+                <div class="st-date">{{ dateStr(order.shipment.etd) }}</div>
+              </div>
+            </div>
+            <div class="st-line" [class.done]="shipmentStepDone('etd')"></div>
+
+            <div class="st-step" [class.done]="shipmentStepDone('eta')">
+              <div class="st-dot"></div>
+              <div class="st-content">
+                <div class="st-label">הגעה משוערת (ETA)</div>
+                <div class="st-date">{{ dateStr(order.shipment.eta) }}</div>
+              </div>
+            </div>
+            <div class="st-line" [class.done]="shipmentStepDone('eta')"></div>
+
+            <div class="st-step" [class.done]="shipmentStepDone('ata')">
+              <div class="st-dot"></div>
+              <div class="st-content">
+                <div class="st-label">הגעה בפועל (ATA)</div>
+                <div class="st-date">{{ dateStr(order.shipment.ata) }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shipping details -->
+          @if (order.shipment.vesselName || order.shipment.blNumber) {
+            <div class="ship-details">
+              @if (order.shipment.vesselName) {
+                <div class="dg-item">
+                  <span class="dg-label">שם אוניה</span>
+                  <span class="dg-value">{{ order.shipment.vesselName }}</span>
+                </div>
+              }
+              @if (order.shipment.blNumber) {
+                <div class="dg-item">
+                  <span class="dg-label">מס' B/L</span>
+                  <span class="dg-value dg-mono">{{ order.shipment.blNumber }}</span>
+                </div>
+              }
+              @if (order.shipment.desiredDeliveryDate) {
+                <div class="dg-item">
+                  <span class="dg-label">מועד אספקה רצוי</span>
+                  <span class="dg-value">{{ dateStr(order.shipment.desiredDeliveryDate) }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          @if (!order.shipment.supplierOCDate) {
+            <div class="empty-state">
+              <mat-icon>local_shipping</mat-icon>
+              <p>אין נתוני משלוח עדיין</p>
+            </div>
+          }
+
+        } @else {
+          <div class="empty-state">
+            <mat-icon>local_shipping</mat-icon>
+            <p>אין נתוני משלוח</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ▸ FINANCE ────────────────────────────────────── -->
+    @if (tab() === 'finance') {
+      <div class="finance-section">
+        @if (order.financial) {
+
+          <!-- 3 financial cards -->
+          <div class="fin-cards">
+
+            <div class="fin-card" [class.fin-ok]="order.financial.invoiceIssuedToSupplier"
+                 [class.fin-pending]="!order.financial.invoiceIssuedToSupplier && order.status !== 'cancelled'">
+              <div class="finc-icon">
+                <mat-icon>{{ order.financial.invoiceIssuedToSupplier ? 'receipt' : 'receipt_long' }}</mat-icon>
+              </div>
+              <div class="finc-body">
+                <div class="finc-title">חשבונית לספק</div>
+                @if (order.financial.supplierInvoiceNo) {
+                  <div class="finc-ref">{{ order.financial.supplierInvoiceNo }}</div>
+                  <div class="finc-date">{{ dateStr(order.financial.supplierInvoiceDate) }}</div>
+                }
+                <div class="finc-amount">
+                  @if (order.financial.invoiceAmount > 0) {
+                    {{ order.financial.invoiceAmount | number:'1.0-0' }} {{ order.financial.currency }}
+                  } @else { — }
+                </div>
+              </div>
+              <div class="finc-status">
+                @if (order.financial.invoiceIssuedToSupplier) {
+                  <span class="fin-chip fin-chip-ok">הוצאה</span>
+                } @else {
+                  <span class="fin-chip fin-chip-pending">טרם הוצאה</span>
+                }
+              </div>
+            </div>
+
+            <div class="fin-card" [class.fin-ok]="order.financial.customerPaid">
+              <div class="finc-icon">
+                <mat-icon>{{ order.financial.customerPaid ? 'payments' : 'pending_actions' }}</mat-icon>
+              </div>
+              <div class="finc-body">
+                <div class="finc-title">תשלום לקוח</div>
+                <div class="finc-amount">
+                  @if (order.financial.amountPaidByCustomer > 0) {
+                    {{ order.financial.amountPaidByCustomer | number:'1.0-0' }} {{ order.financial.currency }}
+                  } @else { — }
+                </div>
+              </div>
+              <div class="finc-status">
+                @if (order.financial.customerPaid) {
+                  <span class="fin-chip fin-chip-ok">שולם</span>
+                } @else {
+                  <span class="fin-chip fin-chip-pending">ממתין</span>
+                }
+              </div>
+            </div>
+
+            <div class="fin-card" [class.fin-ok]="order.financial.commissionReceived">
+              <div class="finc-icon">
+                <mat-icon>{{ order.financial.commissionReceived ? 'paid' : 'monetization_on' }}</mat-icon>
+              </div>
+              <div class="finc-body">
+                <div class="finc-title">עמלה</div>
+                <div class="finc-amount finc-commission">
+                  {{ order.commissionAmount | number:'1.0-0' }} {{ order.currency }}
+                </div>
+                @if (order.financial.commissionAmountReceived > 0) {
+                  <div class="finc-received">
+                    התקבל: {{ order.financial.commissionAmountReceived | number:'1.0-0' }}
+                  </div>
+                }
+              </div>
+              <div class="finc-status">
+                @if (order.financial.commissionReceived) {
+                  <span class="fin-chip fin-chip-ok">התקבלה</span>
+                } @else {
+                  <span class="fin-chip fin-chip-warn">לא התקבלה</span>
+                }
+              </div>
+            </div>
+
+          </div>
+
+        } @else {
+          <div class="empty-state">
+            <mat-icon>receipt_long</mat-icon>
+            <p>אין נתוני פיננסים</p>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  <!-- ── Footer actions ─────────────────────────────── -->
+  <div class="drawer-footer">
+    <button class="df-btn-primary">
+      <mat-icon>edit</mat-icon> עריכה
+    </button>
+    @if (order.status !== 'cancelled' && order.status !== 'frozen') {
+      <button class="df-btn-secondary">
+        <mat-icon>pause_circle</mat-icon> הקפאה
+      </button>
+    }
+    @if (order.status === 'frozen') {
+      <button class="df-btn-secondary">
+        <mat-icon>play_circle</mat-icon> שחרור הקפאה
+      </button>
+    }
+    @if (order.status !== 'cancelled') {
+      <button class="df-btn-danger">
+        <mat-icon>cancel</mat-icon> ביטול
+      </button>
+    }
+  </div>
+
+</div>

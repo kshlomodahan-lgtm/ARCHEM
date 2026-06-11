@@ -1,0 +1,98 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sf-bg);
+  direction: rtl;
+}
+
+.login-card {
+  background: var(--sf-bg-card);
+  border: 1px solid var(--sf-border);
+  border-radius: 16px;
+  padding: 48px 40px 40px;
+  width: 360px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+}
+
+.login-brand {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  text-align: center;
+  margin-bottom: 4px;
+  .brand-arc { color: var(--sf-primary); }
+  .brand-hem { color: var(--sf-text); }
+}
+
+.login-subtitle {
+  text-align: center;
+  font-size: .85rem;
+  color: var(--sf-text-secondary);
+  margin-bottom: 32px;
+}
+
+.login-form { display: flex; flex-direction: column; gap: 18px; }
+
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+
+.field-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--sf-text-secondary);
+}
+
+.field-input {
+  padding: 10px 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  font-size: .92rem;
+  background: var(--sf-bg);
+  color: var(--sf-text);
+  outline: none;
+  transition: border-color .15s;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+
+  &:focus { border-color: var(--sf-border-focus); }
+}
+
+.login-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--sf-danger);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: .85rem;
+}
+
+.btn-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--sf-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  transition: background .15s;
+  margin-top: 4px;
+
+  &:hover:not(:disabled) { background: var(--sf-primary-hover); }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+
+.btn-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

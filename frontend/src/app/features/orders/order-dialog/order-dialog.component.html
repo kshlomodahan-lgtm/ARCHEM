@@ -1,0 +1,386 @@
+<kendo-dialog [title]="title" [width]="920" [minWidth]="640" (close)="cancel()">
+
+  <form [formGroup]="form" autocomplete="off">
+    <div class="od-body">
+
+      <!-- ── Sidebar Nav ─────────────────────────── -->
+      <nav class="od-nav">
+        @for (g of groups; track g.id) {
+          <button type="button" class="od-nav-item"
+                  [class.active]="activeGroup() === g.id"
+                  (click)="activeGroup.set(g.id)">
+            <mat-icon>{{ g.icon }}</mat-icon>
+            <span>{{ g.text }}</span>
+            @if (g.id === 'lines') {
+              <span class="nav-badge">{{ lineItems.length }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      <!-- ── Content ────────────────────────────── -->
+      <div class="od-content">
+
+        <!-- ▸ כללי ──────────────────────────────── -->
+        @if (activeGroup() === 'general') {
+          <div class="od-section">
+
+            <div class="form-row">
+              <div class="form-group required">
+                <label class="form-label">ספק</label>
+                <kendo-dropdownlist
+                  formControlName="supplierId"
+                  [data]="suppliers()"
+                  textField="Name"
+                  valueField="SupplierID"
+                  [valuePrimitive]="true"
+                  [defaultItem]="{ SupplierID: null, Name: 'בחר ספק...' }"
+                  [filterable]="true"
+                  class="kdd-full"
+                  [class.invalid]="form.get('supplierId')?.invalid && form.get('supplierId')?.touched">
+                </kendo-dropdownlist>
+                @if (form.get('supplierId')?.invalid && form.get('supplierId')?.touched) {
+                  <span class="form-err">שדה חובה</span>
+                }
+              </div>
+              <div class="form-group required">
+                <label class="form-label">לקוח</label>
+                <kendo-dropdownlist
+                  formControlName="customerId"
+                  [data]="customers()"
+                  textField="Name"
+                  valueField="CustomerID"
+                  [valuePrimitive]="true"
+                  [defaultItem]="{ CustomerID: null, Name: 'בחר לקוח...' }"
+                  [filterable]="true"
+                  class="kdd-full"
+                  [class.invalid]="form.get('customerId')?.invalid && form.get('customerId')?.touched">
+                </kendo-dropdownlist>
+                @if (form.get('customerId')?.invalid && form.get('customerId')?.touched) {
+                  <span class="form-err">שדה חובה</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">חברה</label>
+                <kendo-dropdownlist
+                  formControlName="companyId"
+                  [data]="companies()"
+                  textField="Name"
+                  valueField="CompanyID"
+                  [valuePrimitive]="true"
+                  [defaultItem]="{ CompanyID: null, Name: 'כל החברות' }"
+                  class="kdd-full">
+                </kendo-dropdownlist>
+              </div>
+              <div class="form-group">
+                <label class="form-label">מטבע</label>
+                <kendo-dropdownlist
+                  formControlName="currencyId"
+                  [data]="currencies()"
+                  textField="Symbol"
+                  valueField="CurrencyID"
+                  [valuePrimitive]="true"
+                  class="kdd-full">
+                </kendo-dropdownlist>
+              </div>
+            </div>
+
+            <div class="form-row form-row-3">
+              <div class="form-group">
+                <label class="form-label">שנה</label>
+                <input class="form-input" type="number" formControlName="orderYear" min="2000" max="2099" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">מספר הזמנה</label>
+                <input class="form-input" type="number" formControlName="orderNumber" placeholder="אוטומטי" />
+              </div>
+              <div class="form-group required">
+                <label class="form-label">תאריך הזמנה</label>
+                <kendo-datepicker formControlName="orderDate" format="dd/MM/yyyy"
+                  [class.invalid]="form.get('orderDate')?.invalid && form.get('orderDate')?.touched">
+                </kendo-datepicker>
+                @if (form.get('orderDate')?.invalid && form.get('orderDate')?.touched) {
+                  <span class="form-err">שדה חובה</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">ערך כולל</label>
+                <input class="form-input" type="number" formControlName="totalValue" min="0" step="0.01" />
+              </div>
+            </div>
+
+            <div class="form-row flags-row">
+              <div class="form-group">
+                <label class="form-label">חוזה מסגרת</label>
+                <div class="seg-ctrl">
+                  <button type="button" class="seg-btn"
+                          [class.seg-on]="!!form.get('isFrameContract')?.value"
+                          (click)="form.get('isFrameContract')?.setValue(true)">✓ כן</button>
+                  <button type="button" class="seg-btn"
+                          [class.seg-off]="!form.get('isFrameContract')?.value"
+                          (click)="form.get('isFrameContract')?.setValue(false)">✗ לא</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">הזמנה חשובה</label>
+                <div class="seg-ctrl">
+                  <button type="button" class="seg-btn"
+                          [class.seg-on]="!!form.get('isImportant')?.value"
+                          (click)="form.get('isImportant')?.setValue(true)">✓ כן</button>
+                  <button type="button" class="seg-btn"
+                          [class.seg-off]="!form.get('isImportant')?.value"
+                          (click)="form.get('isImportant')?.setValue(false)">✗ לא</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        }
+
+        <!-- ▸ שורות ──────────────────────────────── -->
+        @if (activeGroup() === 'lines') {
+          <div class="od-section lines-section">
+            <div class="lines-toolbar">
+              <span class="lines-count">{{ lineItems.length }} שורות</span>
+              <button type="button" class="btn-add-line" (click)="addLine()">
+                <mat-icon>add</mat-icon> הוסף שורה
+              </button>
+            </div>
+
+            @if (lineItems.length === 0) {
+              <div class="lines-empty">
+                <mat-icon>list_alt</mat-icon>
+                <p>אין שורות — לחץ "הוסף שורה" להתחלה</p>
+              </div>
+            } @else {
+              <div class="lines-table-wrap">
+                <table class="lines-table">
+                  <thead>
+                    <tr>
+                      <th class="col-del"></th>
+                      <th>מק"ט ספק</th>
+                      <th>תיאור</th>
+                      <th class="ta-num">כמות</th>
+                      <th>יח'</th>
+                      <th class="ta-num">מחיר</th>
+                      <th class="ta-num">הנחה%</th>
+                      <th class="ta-num">ערך</th>
+                      <th>ת. אספקה</th>
+                      <th>עמלה</th>
+                      <th class="ta-num">%/סכום</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (line of lineItems; track $index; let i = $index) {
+                      <tr>
+                        <td class="col-del">
+                          <button type="button" class="btn-del-line" (click)="removeLine(i)">
+                            <mat-icon>close</mat-icon>
+                          </button>
+                        </td>
+                        <td><input class="line-input" [(ngModel)]="line.supplierSKU" [ngModelOptions]="{standalone:true}" /></td>
+                        <td><input class="line-input w-desc" [(ngModel)]="line.description" [ngModelOptions]="{standalone:true}" /></td>
+                        <td><input class="line-input ta-num" type="number" [(ngModel)]="line.qtyOrdered" [ngModelOptions]="{standalone:true}"
+                                   (change)="calcLineValue(line)" min="0" /></td>
+                        <td><input class="line-input w-uom" [(ngModel)]="line.uom" [ngModelOptions]="{standalone:true}" /></td>
+                        <td><input class="line-input ta-num" type="number" [(ngModel)]="line.price" [ngModelOptions]="{standalone:true}"
+                                   (change)="calcLineValue(line)" min="0" step="0.01" /></td>
+                        <td><input class="line-input ta-num" type="number" [(ngModel)]="line.discountPct" [ngModelOptions]="{standalone:true}"
+                                   (change)="calcLineValue(line)" min="0" max="100" /></td>
+                        <td class="ta-num val-cell">{{ line.lineValue | number:'1.0-0' }}</td>
+                        <td><input class="line-input" type="date" [(ngModel)]="line.deliveryDate" [ngModelOptions]="{standalone:true}" /></td>
+                        <td>
+                          <select class="line-select" [(ngModel)]="line.commissionType" [ngModelOptions]="{standalone:true}">
+                            @for (ct of commTypes; track ct.value) {
+                              <option [value]="ct.value">{{ ct.label }}</option>
+                            }
+                          </select>
+                        </td>
+                        <td>
+                          @if (line.commissionType === 'PCT') {
+                            <input class="line-input ta-num" type="number" [(ngModel)]="line.commissionPct" [ngModelOptions]="{standalone:true}" min="0" max="100" />
+                          }
+                          @if (line.commissionType === 'FIXED') {
+                            <input class="line-input ta-num" type="number" [(ngModel)]="line.commissionFixed" [ngModelOptions]="{standalone:true}" min="0" />
+                          }
+                          @if (line.commissionType === 'NONE') {
+                            <span class="text-muted">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ▸ משלוח ──────────────────────────────── -->
+        @if (activeGroup() === 'shipment') {
+          <div class="od-section">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">OC ספק</label>
+                <input class="form-input" formControlName="supplierOC" placeholder="מספר אישור הזמנה" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">תאריך OC</label>
+                <kendo-datepicker formControlName="supplierOCDate" format="dd/MM/yyyy"></kendo-datepicker>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">תאריך אספקה רצוי</label>
+                <kendo-datepicker formControlName="desiredDeliveryDate" format="dd/MM/yyyy"></kendo-datepicker>
+              </div>
+              <div class="form-group">
+                <label class="form-label">שיטת הובלה</label>
+                <kendo-dropdownlist
+                  formControlName="transportMode"
+                  [data]="transportModes"
+                  textField="label"
+                  valueField="value"
+                  [valuePrimitive]="true"
+                  class="kdd-full">
+                </kendo-dropdownlist>
+              </div>
+            </div>
+
+            <div class="form-row form-row-3">
+              <div class="form-group">
+                <label class="form-label">ETD</label>
+                <kendo-datepicker formControlName="etd" format="dd/MM/yyyy"></kendo-datepicker>
+              </div>
+              <div class="form-group">
+                <label class="form-label">ETA</label>
+                <kendo-datepicker formControlName="eta" format="dd/MM/yyyy"></kendo-datepicker>
+              </div>
+              <div class="form-group">
+                <label class="form-label">ATA</label>
+                <kendo-datepicker formControlName="ata" format="dd/MM/yyyy"></kendo-datepicker>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">שם האוניה / מטוס</label>
+                <input class="form-input" formControlName="vesselName" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">מספר B/L</label>
+                <input class="form-input" formControlName="blNumber" />
+              </div>
+            </div>
+
+          </div>
+        }
+
+        <!-- ▸ פיננסים ─────────────────────────────── -->
+        @if (activeGroup() === 'finance') {
+          <div class="od-section">
+
+            <div class="form-section-title">חשבונית לספק</div>
+            <div class="form-row form-row-3">
+              <div class="form-group">
+                <label class="form-label">מספר חשבונית</label>
+                <input class="form-input" formControlName="supplierInvoiceNo" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">תאריך חשבונית</label>
+                <kendo-datepicker formControlName="supplierInvoiceDate" format="dd/MM/yyyy"></kendo-datepicker>
+              </div>
+              <div class="form-group">
+                <label class="form-label">סכום חשבונית</label>
+                <input class="form-input" type="number" formControlName="invoiceAmount" min="0" step="0.01" />
+              </div>
+            </div>
+
+            <div class="form-row flags-row">
+              <div class="form-group">
+                <label class="form-label">הוצאה לספק</label>
+                <div class="seg-ctrl">
+                  <button type="button" class="seg-btn"
+                          [class.seg-on]="!!form.get('invoiceIssuedToSupplier')?.value"
+                          (click)="form.get('invoiceIssuedToSupplier')?.setValue(true)">✓ כן</button>
+                  <button type="button" class="seg-btn"
+                          [class.seg-off]="!form.get('invoiceIssuedToSupplier')?.value"
+                          (click)="form.get('invoiceIssuedToSupplier')?.setValue(false)">✗ לא</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">שולם ע"י לקוח</label>
+                <div class="seg-ctrl">
+                  <button type="button" class="seg-btn"
+                          [class.seg-on]="!!form.get('customerPaid')?.value"
+                          (click)="form.get('customerPaid')?.setValue(true)">✓ כן</button>
+                  <button type="button" class="seg-btn"
+                          [class.seg-off]="!form.get('customerPaid')?.value"
+                          (click)="form.get('customerPaid')?.setValue(false)">✗ לא</button>
+                </div>
+              </div>
+            </div>
+
+            @if (form.get('customerPaid')?.value) {
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">סכום ששולם</label>
+                  <input class="form-input" type="number" formControlName="amountPaidByCustomer" min="0" step="0.01" />
+                </div>
+              </div>
+            }
+
+            <div class="form-section-title">עמלה</div>
+            <div class="form-row flags-row">
+              <div class="form-group">
+                <label class="form-label">עמלה התקבלה</label>
+                <div class="seg-ctrl">
+                  <button type="button" class="seg-btn"
+                          [class.seg-on]="!!form.get('commissionReceived')?.value"
+                          (click)="form.get('commissionReceived')?.setValue(true)">✓ כן</button>
+                  <button type="button" class="seg-btn"
+                          [class.seg-off]="!form.get('commissionReceived')?.value"
+                          (click)="form.get('commissionReceived')?.setValue(false)">✗ לא</button>
+                </div>
+              </div>
+            </div>
+
+            @if (form.get('commissionReceived')?.value) {
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">סכום עמלה שהתקבל</label>
+                  <input class="form-input" type="number" formControlName="commissionAmtReceived" min="0" step="0.01" />
+                </div>
+              </div>
+            }
+
+          </div>
+        }
+
+      </div><!-- od-content -->
+    </div><!-- od-body -->
+  </form>
+
+  <kendo-dialog-actions>
+    <div class="od-footer">
+      @if (errorMsg) {
+        <span class="od-err">{{ errorMsg }}</span>
+      }
+      <button type="button" class="btn-cancel" (click)="cancel()">ביטול</button>
+      <button type="button" class="btn-save" [disabled]="saving()" (click)="save()">
+        @if (saving()) { <span class="btn-spinner"></span> }
+        @else { ✓ }
+        שמור
+      </button>
+    </div>
+  </kendo-dialog-actions>
+
+</kendo-dialog>

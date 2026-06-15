@@ -24,7 +24,10 @@ export class ShellComponent {
   sidebarOpen = true;
 
   navItems: NavItem[] = [
-    { icon: 'receipt_long', label: 'הזמנות', route: '/app/orders' },
+    { icon: 'receipt_long',    label: 'הזמנות',        route: '/app/orders'       },
+    { icon: 'local_shipping',  label: 'ספקים',          route: '/app/suppliers'    },
+    { icon: 'people',          label: 'לקוחות',         route: '/app/customers'    },
+    { icon: 'upload_file',     label: 'קליטת מסמך',    route: '/app/order-intake' },
   ];
 
   constructor(public auth: AuthService, public theme: ThemeService) {}

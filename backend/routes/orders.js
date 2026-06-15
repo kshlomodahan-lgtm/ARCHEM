@@ -282,4 +282,263 @@ router.get('/:orderId', requireAuth, async (req, res) => {
   }
 });
 
+
+// ── META ─────────────────────────────────────────────────────────────────────
+
+router.get('/meta/companies', requireAuth, async (req, res) => {
+  try {
+    const pool = await getPool();
+    const r = await pool.request().query(
+      `SELECT CompanyID, ISNULL(NameHE, NameEN) AS Name FROM tblCompanies WHERE IsActive=1 ORDER BY NameHE`
+    );
+    res.json({ success: true, data: r.recordset, message: '' });
+  } catch (err) { res.status(500).json({ success: false, data: null, message: err.message }); }
+});
+
+router.get('/meta/currencies', requireAuth, async (req, res) => {
+  try {
+    const pool = await getPool();
+    const r = await pool.request().query(
+      `SELECT CurrencyID, CurrencySymbol AS Symbol, ISNULL(CurrencyNameHE, CurrencySymbol) AS Name FROM tblCurrencies ORDER BY CurrencyID`
+    );
+    res.json({ success: true, data: r.recordset, message: '' });
+  } catch (err) { res.status(500).json({ success: false, data: null, message: err.message }); }
+});
+
+router.get('/meta/next-order-number', requireAuth, async (req, res) => {
+  try {
+    const pool = await getPool();
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    const r = await pool.request()
+      .input('Year', sql.SmallInt, year)
+      .query(`SELECT ISNULL(MAX(OrderNumber),0)+1 AS NextNo FROM tblOrders WHERE OrderYear=@Year`);
+    res.json({ success: true, data: { nextNo: r.recordset[0].NextNo }, message: '' });
+  } catch (err) { res.status(500).json({ success: false, data: null, message: err.message }); }
+});
+
+// ── CREATE ────────────────────────────────────────────────────────────────────
+
+function reverseCommType(t) {
+  if (t === 'PCT')       return 'א';
+  if (t === 'FIXED')     return 'ק';
+  if (t === 'PER_PRICE') return 'מ';
+  return null;
+}
+
+router.post('/', requireAuth, async (req, res) => {
+  const { header, lines } = req.body;
+  if (!header || !header.supplierId || !header.customerId)
+    return res.status(400).json({ success: false, message: 'ספק, לקוח ותאריך הם שדות חובה' });
+
+  const pool = await getPool();
+  const t = new sql.Transaction(pool);
+  await t.begin();
+  try {
+    const r = new sql.Request(t);
+    r.input('CompanyID',          sql.Int,           header.companyId   || null);
+    r.input('OrderYear',          sql.SmallInt,      header.orderYear   || new Date().getFullYear());
+    r.input('OrderNumber',        sql.Int,           header.orderNumber || null);
+    r.input('GroupNo',            sql.NVarChar(10),  header.groupNo     || null);
+    r.input('SupplierID',         sql.Int,           header.supplierId);
+    r.input('CustomerID',         sql.Int,           header.customerId);
+    r.input('OrderDate',          sql.DateTime,      header.orderDate ? new Date(header.orderDate) : new Date());
+    r.input('CurrencyID',         sql.Int,           header.currencyId  || 1);
+    r.input('IsFrameContract',    sql.Bit,           header.isFrameContract ? 1 : 0);
+    r.input('IsImportant',        sql.Bit,           header.isImportant ? 1 : 0);
+    r.input('IsFrozen',           sql.Bit,           0);
+    r.input('IsCancelled',        sql.Bit,           0);
+    r.input('TotalValue',         sql.Decimal(18,2), header.totalValue  || 0);
+    r.input('TotalCommission',    sql.Decimal(18,2), 0);
+    r.input('CommissionReceived', sql.Bit,           0);
+    r.input('CommissionAmtReceived', sql.Decimal(18,2), 0);
+    r.input('SupplierOC',         sql.NVarChar(50),  header.supplierOC           || null);
+    r.input('SupplierOCDate',     sql.DateTime,      header.supplierOCDate        ? new Date(header.supplierOCDate) : null);
+    r.input('DesiredDeliveryDate',sql.DateTime,      header.desiredDeliveryDate   ? new Date(header.desiredDeliveryDate) : null);
+    r.input('ETD',                sql.DateTime,      header.etd ? new Date(header.etd) : null);
+    r.input('ETA',                sql.DateTime,      header.eta ? new Date(header.eta) : null);
+    r.input('ATA',                sql.DateTime,      header.ata ? new Date(header.ata) : null);
+    r.input('VesselName',         sql.NVarChar(100), header.vesselName   || null);
+    r.input('BLNumber',           sql.NVarChar(50),  header.blNumber     || null);
+    r.input('TransportMode',      sql.Char(1),       header.transportMode || null);
+    r.input('SupplierInvoiceNo',  sql.NVarChar(50),  header.supplierInvoiceNo   || null);
+    r.input('SupplierInvoiceDate',sql.DateTime,      header.supplierInvoiceDate  ? new Date(header.supplierInvoiceDate) : null);
+    r.input('InvoiceAmount',      sql.Decimal(18,2), header.invoiceAmount || 0);
+    r.input('CustomerPaid',       sql.Bit,           header.customerPaid ? 1 : 0);
+    r.input('AmountPaidByCustomer',sql.Decimal(18,2),header.amountPaidByCustomer || 0);
+    r.input('InvoiceIssuedToSupplier',sql.Bit,       header.invoiceIssuedToSupplier ? 1 : 0);
+
+    const ins = await r.query(`
+      INSERT INTO tblOrders (
+        CompanyID, OrderYear, OrderNumber, GroupNo, SupplierID, CustomerID,
+        OrderDate, CurrencyID, IsFrameContract, IsImportant, IsFrozen, IsCancelled,
+        TotalValue, TotalCommission, CommissionReceived, CommissionAmtReceived,
+        SupplierOC, SupplierOCDate, DesiredDeliveryDate, ETD, ETA, ATA,
+        VesselName, BLNumber, TransportMode,
+        SupplierInvoiceNo, SupplierInvoiceDate, InvoiceAmount,
+        CustomerPaid, AmountPaidByCustomer, InvoiceIssuedToSupplier
+      ) VALUES (
+        @CompanyID,@OrderYear,@OrderNumber,@GroupNo,@SupplierID,@CustomerID,
+        @OrderDate,@CurrencyID,@IsFrameContract,@IsImportant,@IsFrozen,@IsCancelled,
+        @TotalValue,@TotalCommission,@CommissionReceived,@CommissionAmtReceived,
+        @SupplierOC,@SupplierOCDate,@DesiredDeliveryDate,@ETD,@ETA,@ATA,
+        @VesselName,@BLNumber,@TransportMode,
+        @SupplierInvoiceNo,@SupplierInvoiceDate,@InvoiceAmount,
+        @CustomerPaid,@AmountPaidByCustomer,@InvoiceIssuedToSupplier
+      );
+      SELECT SCOPE_IDENTITY() AS OrderID;
+    `);
+    const newOrderId = ins.recordset[0].OrderID;
+
+    if (lines && lines.length > 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        const lr = new sql.Request(t);
+        lr.input('OrderID',      sql.BigInt,        newOrderId);
+        lr.input('LineNo',       sql.SmallInt,      i + 1);
+        lr.input('GroupNo',      sql.SmallInt,      l.groupNo || 1);
+        lr.input('SupplierSKU',  sql.NVarChar(50),  l.supplierSKU  || null);
+        lr.input('CustomerSKU',  sql.NVarChar(50),  l.customerSKU  || null);
+        lr.input('Description',  sql.NVarChar(200), l.description  || null);
+        lr.input('QtyOrdered',   sql.Decimal(18,4), l.qtyOrdered   || 0);
+        lr.input('QtyRemaining', sql.Decimal(18,4), l.qtyOrdered   || 0);
+        lr.input('Price',        sql.Decimal(18,4), l.price        || 0);
+        lr.input('UOM',          sql.NVarChar(20),  l.uom          || null);
+        lr.input('CurrencyID',   sql.Int,           l.currencyId   || header.currencyId || 1);
+        lr.input('DiscountPct',  sql.Decimal(5,2),  l.discountPct  || 0);
+        lr.input('LineValue',    sql.Decimal(18,2), l.lineValue    || 0);
+        lr.input('DeliveryDate', sql.DateTime,      l.deliveryDate  ? new Date(l.deliveryDate) : null);
+        lr.input('CommissionType',    sql.Char(1),       reverseCommType(l.commissionType));
+        lr.input('CommissionPct',     sql.Decimal(5,2),  l.commissionPct   || 0);
+        lr.input('CommissionFixed',   sql.Decimal(18,2), l.commissionFixed || 0);
+        lr.input('CommissionPerPrice',sql.Decimal(18,2), 0);
+        lr.input('IsFrameContract',   sql.Bit,           l.isFrameContract ? 1 : 0);
+        await lr.query(`
+          INSERT INTO tblOrderLines (
+            OrderID,LineNo,GroupNo,SupplierSKU,CustomerSKU,Description,
+            QtyOrdered,QtyRemaining,Price,UOM,CurrencyID,DiscountPct,LineValue,
+            DeliveryDate,CommissionType,CommissionPct,CommissionFixed,CommissionPerPrice,IsFrameContract
+          ) VALUES (
+            @OrderID,@LineNo,@GroupNo,@SupplierSKU,@CustomerSKU,@Description,
+            @QtyOrdered,@QtyRemaining,@Price,@UOM,@CurrencyID,@DiscountPct,@LineValue,
+            @DeliveryDate,@CommissionType,@CommissionPct,@CommissionFixed,@CommissionPerPrice,@IsFrameContract
+          )
+        `);
+      }
+    }
+
+    await t.commit();
+    res.json({ success: true, data: { orderId: newOrderId }, message: 'הזמנה נוצרה בהצלחה' });
+  } catch (err) {
+    await t.rollback();
+    console.error('POST /api/orders', err.message);
+    res.status(500).json({ success: false, data: null, message: err.message });
+  }
+});
+
+// ── UPDATE ────────────────────────────────────────────────────────────────────
+
+router.put('/:orderId', requireAuth, async (req, res) => {
+  const orderId = parseInt(req.params.orderId);
+  const { header, lines } = req.body;
+  if (!orderId || !header)
+    return res.status(400).json({ success: false, message: 'נתונים חסרים' });
+
+  const pool = await getPool();
+  const t = new sql.Transaction(pool);
+  await t.begin();
+  try {
+    const r = new sql.Request(t);
+    r.input('OrderID',            sql.BigInt,        orderId);
+    r.input('SupplierID',         sql.Int,           header.supplierId);
+    r.input('CustomerID',         sql.Int,           header.customerId);
+    r.input('CompanyID',          sql.Int,           header.companyId   || null);
+    r.input('OrderDate',          sql.DateTime,      header.orderDate ? new Date(header.orderDate) : null);
+    r.input('CurrencyID',         sql.Int,           header.currencyId  || 1);
+    r.input('IsFrameContract',    sql.Bit,           header.isFrameContract ? 1 : 0);
+    r.input('IsImportant',        sql.Bit,           header.isImportant ? 1 : 0);
+    r.input('TotalValue',         sql.Decimal(18,2), header.totalValue  || 0);
+    r.input('SupplierOC',         sql.NVarChar(50),  header.supplierOC           || null);
+    r.input('SupplierOCDate',     sql.DateTime,      header.supplierOCDate        ? new Date(header.supplierOCDate) : null);
+    r.input('DesiredDeliveryDate',sql.DateTime,      header.desiredDeliveryDate   ? new Date(header.desiredDeliveryDate) : null);
+    r.input('ETD',                sql.DateTime,      header.etd ? new Date(header.etd) : null);
+    r.input('ETA',                sql.DateTime,      header.eta ? new Date(header.eta) : null);
+    r.input('ATA',                sql.DateTime,      header.ata ? new Date(header.ata) : null);
+    r.input('VesselName',         sql.NVarChar(100), header.vesselName   || null);
+    r.input('BLNumber',           sql.NVarChar(50),  header.blNumber     || null);
+    r.input('TransportMode',      sql.Char(1),       header.transportMode || null);
+    r.input('SupplierInvoiceNo',  sql.NVarChar(50),  header.supplierInvoiceNo   || null);
+    r.input('SupplierInvoiceDate',sql.DateTime,      header.supplierInvoiceDate  ? new Date(header.supplierInvoiceDate) : null);
+    r.input('InvoiceAmount',      sql.Decimal(18,2), header.invoiceAmount || 0);
+    r.input('CustomerPaid',       sql.Bit,           header.customerPaid ? 1 : 0);
+    r.input('AmountPaidByCustomer',sql.Decimal(18,2),header.amountPaidByCustomer || 0);
+    r.input('InvoiceIssuedToSupplier',sql.Bit,       header.invoiceIssuedToSupplier ? 1 : 0);
+    r.input('CommissionReceived', sql.Bit,           header.commissionReceived ? 1 : 0);
+    r.input('CommissionAmtReceived',sql.Decimal(18,2),header.commissionAmtReceived || 0);
+
+    await r.query(`
+      UPDATE tblOrders SET
+        SupplierID=@SupplierID, CustomerID=@CustomerID, CompanyID=@CompanyID,
+        OrderDate=@OrderDate, CurrencyID=@CurrencyID,
+        IsFrameContract=@IsFrameContract, IsImportant=@IsImportant, TotalValue=@TotalValue,
+        SupplierOC=@SupplierOC, SupplierOCDate=@SupplierOCDate,
+        DesiredDeliveryDate=@DesiredDeliveryDate, ETD=@ETD, ETA=@ETA, ATA=@ATA,
+        VesselName=@VesselName, BLNumber=@BLNumber, TransportMode=@TransportMode,
+        SupplierInvoiceNo=@SupplierInvoiceNo, SupplierInvoiceDate=@SupplierInvoiceDate,
+        InvoiceAmount=@InvoiceAmount, CustomerPaid=@CustomerPaid,
+        AmountPaidByCustomer=@AmountPaidByCustomer,
+        InvoiceIssuedToSupplier=@InvoiceIssuedToSupplier,
+        CommissionReceived=@CommissionReceived, CommissionAmtReceived=@CommissionAmtReceived
+      WHERE OrderID=@OrderID
+    `);
+
+    if (lines) {
+      await new sql.Request(t)
+        .input('OrderID', sql.BigInt, orderId)
+        .query('DELETE FROM tblOrderLines WHERE OrderID=@OrderID');
+
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        const lr = new sql.Request(t);
+        lr.input('OrderID',      sql.BigInt,        orderId);
+        lr.input('LineNo',       sql.SmallInt,      i + 1);
+        lr.input('GroupNo',      sql.SmallInt,      l.groupNo || 1);
+        lr.input('SupplierSKU',  sql.NVarChar(50),  l.supplierSKU  || null);
+        lr.input('CustomerSKU',  sql.NVarChar(50),  l.customerSKU  || null);
+        lr.input('Description',  sql.NVarChar(200), l.description  || null);
+        lr.input('QtyOrdered',   sql.Decimal(18,4), l.qtyOrdered   || 0);
+        lr.input('QtyRemaining', sql.Decimal(18,4), l.qtyOrdered   || 0);
+        lr.input('Price',        sql.Decimal(18,4), l.price        || 0);
+        lr.input('UOM',          sql.NVarChar(20),  l.uom          || null);
+        lr.input('CurrencyID',   sql.Int,           l.currencyId   || header.currencyId || 1);
+        lr.input('DiscountPct',  sql.Decimal(5,2),  l.discountPct  || 0);
+        lr.input('LineValue',    sql.Decimal(18,2), l.lineValue    || 0);
+        lr.input('DeliveryDate', sql.DateTime,      l.deliveryDate  ? new Date(l.deliveryDate) : null);
+        lr.input('CommissionType',    sql.Char(1),       reverseCommType(l.commissionType));
+        lr.input('CommissionPct',     sql.Decimal(5,2),  l.commissionPct   || 0);
+        lr.input('CommissionFixed',   sql.Decimal(18,2), l.commissionFixed || 0);
+        lr.input('CommissionPerPrice',sql.Decimal(18,2), 0);
+        lr.input('IsFrameContract',   sql.Bit,           l.isFrameContract ? 1 : 0);
+        await lr.query(`
+          INSERT INTO tblOrderLines (
+            OrderID,LineNo,GroupNo,SupplierSKU,CustomerSKU,Description,
+            QtyOrdered,QtyRemaining,Price,UOM,CurrencyID,DiscountPct,LineValue,
+            DeliveryDate,CommissionType,CommissionPct,CommissionFixed,CommissionPerPrice,IsFrameContract
+          ) VALUES (
+            @OrderID,@LineNo,@GroupNo,@SupplierSKU,@CustomerSKU,@Description,
+            @QtyOrdered,@QtyRemaining,@Price,@UOM,@CurrencyID,@DiscountPct,@LineValue,
+            @DeliveryDate,@CommissionType,@CommissionPct,@CommissionFixed,@CommissionPerPrice,@IsFrameContract
+          )
+        `);
+      }
+    }
+
+    await t.commit();
+    res.json({ success: true, data: { orderId }, message: 'הזמנה עודכנה בהצלחה' });
+  } catch (err) {
+    await t.rollback();
+    console.error('PUT /api/orders/:id', err.message);
+    res.status(500).json({ success: false, data: null, message: err.message });
+  }
+});
+
 module.exports = router;

@@ -1,0 +1,247 @@
+<div class="customers-page">
+
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1>לקוחות</h1>
+      <p>{{ gridData.length }} לקוחות מוצגים</p>
+    </div>
+    <button class="btn-save" (click)="openNew()">✓ לקוח חדש</button>
+  </div>
+
+  <!-- ── Toolbar ──────────────────────────────────────────── -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="material-icons search-icon">search</span>
+      <input class="search-input" type="text" placeholder="חיפוש לקוח, ח.פ, טלפון..."
+             [value]="searchTerm" (input)="onSearch($any($event.target).value)" />
+    </div>
+
+    <select class="filter-select" [(ngModel)]="filterActive" (ngModelChange)="onFilterChange()">
+      <option value="">כל הסטטוסים</option>
+      <option value="1">פעיל</option>
+      <option value="0">מושבת</option>
+    </select>
+
+    <select class="filter-select" [(ngModel)]="filterCountry" (ngModelChange)="onFilterChange()">
+      <option value="">כל המדינות</option>
+      @for (c of uniqueCountries; track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </select>
+
+    @if (hasActiveFilters()) {
+      <button class="btn-clear-filters" (click)="clearFilters()" title="נקה פילטרים">
+        <span class="material-icons">filter_list_off</span>
+        נקה
+      </button>
+    }
+  </div>
+
+  <!-- ── Grid Area ────────────────────────────────────────── -->
+  <div class="grid-area">
+
+    @if (loading()) {
+      <div class="loading-box">
+        <span class="material-icons spin">refresh</span> טוען לקוחות...
+      </div>
+    } @else if (error()) {
+      <div class="error-box">{{ error() }}</div>
+    } @else {
+
+    <!-- ── Grid ─────────────────────────────────────────────── -->
+    <kendo-grid
+      [data]="{ data: pagedData, total: gridData.length }"
+      [skip]="skip"
+      [pageSize]="pageSize"
+      [pageable]="{ buttonCount: 5, info: true, type: 'numeric', pageSizes: [10, 25, 50] }"
+      [sortable]="{ mode: 'single', allowUnsort: false }"
+      [sort]="sort"
+      [reorderable]="true"
+      [resizable]="true"
+      [selectable]="{ mode: 'multiple', checkboxOnly: true }"
+      [columnMenu]="true"
+      scrollable="scrollable"
+      dir="rtl"
+      [style.height]="'calc(100vh - 300px)'"
+      (pageChange)="onPageChange($event)"
+      (sortChange)="onSortChange($event)"
+      (cellClick)="onCellClick($event)"
+      class="customers-grid"
+      #grid>
+
+      <kendo-grid-checkbox-column [width]="44" [showSelectAll]="true" />
+
+      <!-- ID -->
+      <kendo-grid-column title="#" field="customerID" [width]="70">
+        <ng-template kendoGridCellTemplate let-c>
+          <span class="id-chip">{{ c.customerID }}</span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Name -->
+      <kendo-grid-column title="שם לקוח" field="shortNameEN">
+        <ng-template kendoGridCellTemplate let-c>
+          <div class="name-cell">
+            <div class="name-avatar">{{ (c.shortNameEN || c.fullNameEN || c.shortNameHE || c.fullNameHE || '?')[0] }}</div>
+            <div class="name-info">
+              <div class="name-main">{{ c.shortNameEN || c.fullNameEN || c.shortNameHE || c.fullNameHE }}</div>
+              @if ((c.shortNameHE || c.fullNameHE) && (c.shortNameEN || c.fullNameEN)) {
+                <div class="name-sub">{{ c.shortNameHE || c.fullNameHE }}</div>
+              }
+            </div>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Company Reg No -->
+      <kendo-grid-column title="ח.פ" field="companyRegNo" [width]="130">
+        <ng-template kendoGridCellTemplate let-c>
+          <span class="mono-val">{{ c.companyRegNo || '—' }}</span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Phone -->
+      <kendo-grid-column title="טלפון" field="primaryPhone" [width]="150">
+        <ng-template kendoGridCellTemplate let-c>
+          <span class="contact-val">{{ c.primaryPhone || '—' }}</span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Email -->
+      <kendo-grid-column title="דוא&quot;ל" field="primaryEmail" [width]="200">
+        <ng-template kendoGridCellTemplate let-c>
+          <span class="contact-val">{{ c.primaryEmail || '—' }}</span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Location -->
+      <kendo-grid-column title="מיקום" field="primaryCity" [width]="180">
+        <ng-template kendoGridCellTemplate let-c>
+          @if (c.primaryCity || c.primaryCountry) {
+            <span class="location-val">{{ c.primaryCity }}{{ c.primaryCity && c.primaryCountry ? ', ' : '' }}{{ c.primaryCountry }}</span>
+          } @else {
+            <span class="text-muted">—</span>
+          }
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Status -->
+      <kendo-grid-column title="סטטוס" field="isActive" [width]="90">
+        <ng-template kendoGridCellTemplate let-c>
+          <span class="status-badge" [class.badge-active]="c.isActive" [class.badge-inactive]="!c.isActive">
+            {{ c.isActive ? 'פעיל' : 'מושבת' }}
+          </span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Actions -->
+      <kendo-grid-column title="" [width]="104"
+        [sortable]="false" [resizable]="false" [columnMenu]="false">
+        <ng-template kendoGridCellTemplate let-c let-rowIndex="rowIndex">
+          <div class="row-actions">
+            <button class="act-btn act-expand"
+                    [class.expanded]="isExpanded(c.customerID)"
+                    [title]="isExpanded(c.customerID) ? 'סגור' : 'פרטים'"
+                    (click)="toggleDetail(c, rowIndex); $event.stopPropagation()">
+              <span class="material-icons">{{ isExpanded(c.customerID) ? 'expand_less' : 'expand_more' }}</span>
+            </button>
+            <button class="act-btn"
+                    [class.act-lock]="c.isActive"
+                    [class.act-unlock]="!c.isActive"
+                    [title]="c.isActive ? 'השבת' : 'הפעל'"
+                    (click)="toggleActive(c); $event.stopPropagation()">
+              <span class="material-icons">{{ c.isActive ? 'lock' : 'lock_open' }}</span>
+            </button>
+            <button class="act-btn act-edit" title="ערוך" (click)="openEdit(c); $event.stopPropagation()">
+              <span class="material-icons">edit</span>
+            </button>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+
+      <!-- Detail row -->
+      <ng-template kendoGridDetailTemplate let-c>
+        <div class="cust-detail-card">
+          <div class="detail-group">
+            <div class="detail-group-title">פרטי לקוח</div>
+            <div class="detail-fields">
+              @if (c.fullNameEN || c.fullNameHE) {
+                <div class="detail-field">
+                  <span class="df-label">שם מלא</span>
+                  <span class="df-val">{{ c.fullNameEN || c.fullNameHE }}</span>
+                </div>
+              }
+              @if (c.fullNameHE && c.fullNameEN) {
+                <div class="detail-field">
+                  <span class="df-label">שם עברית</span>
+                  <span class="df-val">{{ c.fullNameHE }}</span>
+                </div>
+              }
+              @if (c.companyRegNo) {
+                <div class="detail-field">
+                  <span class="df-label">ח.פ / ע.מ</span>
+                  <span class="df-val ltr">{{ c.companyRegNo }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="detail-group">
+            <div class="detail-group-title">התקשרות</div>
+            <div class="detail-fields">
+              @if (c.primaryPhone) {
+                <div class="detail-field">
+                  <span class="df-label">טלפון</span>
+                  <span class="df-val ltr">{{ c.primaryPhone }}</span>
+                </div>
+              }
+              @if (c.primaryEmail) {
+                <div class="detail-field">
+                  <span class="df-label">דוא"ל</span>
+                  <span class="df-val ltr">{{ c.primaryEmail }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          @if (c.primaryCity || c.primaryCountry) {
+            <div class="detail-group">
+              <div class="detail-group-title">מיקום</div>
+              <div class="detail-fields">
+                @if (c.primaryCity) {
+                  <div class="detail-field">
+                    <span class="df-label">עיר</span>
+                    <span class="df-val">{{ c.primaryCity }}</span>
+                  </div>
+                }
+                @if (c.primaryCountry) {
+                  <div class="detail-field">
+                    <span class="df-label">מדינה</span>
+                    <span class="df-val">{{ c.primaryCountry }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </ng-template>
+
+      <kendo-grid-messages
+        pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="לקוחות"
+        columnMenuFilter="סנן" columnMenuSort="מיון" columnMenuColumns="עמודות"
+        columnMenuSortAscending="עולה" columnMenuSortDescending="יורד"
+        selectionCheckboxLabel="בחר שורה" selectAllCheckboxLabel="בחר הכל"
+        noRecords="לא נמצאו לקוחות" loading="טוען..." />
+    </kendo-grid>
+
+    }
+  </div><!-- /grid-area -->
+</div>
+
+<!-- ── Dialog ───────────────────────────────────────────── -->
+@if (showDialog()) {
+  <app-customer-dialog
+    [customerId]="dialogId()"
+    (saved)="onDialogSaved()"
+    (cancelled)="onDialogCancelled()">
+  </app-customer-dialog>
+}

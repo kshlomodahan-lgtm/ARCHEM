@@ -245,7 +245,7 @@
   display: inline-block;
   width: 8px; height: 8px;
   border-radius: 50%;
-  margin-left: .35rem;
+  margin-inline-end: .35rem;
   &.dot-active    { background: var(--sf-success); }
   &.dot-important { background: var(--sf-warning); }
   &.dot-frozen    { background: #3b82f6; }
@@ -291,7 +291,7 @@
 }
 
 // Lines table
-.lines-table-wrap { overflow-x: auto; }
+.lines-table-wrap { overflow-x: auto; direction: rtl; }
 
 .lines-table {
   width: 100%;
@@ -363,7 +363,7 @@
 .uom-badge {
   font-size: .62rem;
   color: var(--sf-text-muted);
-  margin-right: 3px;
+  margin-inline-start: 3px;
 }
 
 // Dispatch progress bar
@@ -635,6 +635,6 @@
 
 .df-btn-danger {
   @extend .df-btn-secondary;
-  margin-right: auto;
+  margin-inline-start: auto;
   &:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 }

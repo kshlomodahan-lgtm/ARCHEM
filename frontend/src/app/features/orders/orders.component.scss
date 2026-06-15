@@ -146,6 +146,8 @@
 
 // ── Grid ─────────────────────────────────────────────────────────────────────
 
+::ng-deep .orders-grid { direction: rtl; }
+
 // Grid header — SQUADFLOW standard
 ::ng-deep .orders-grid .k-grid-header th.k-header {
   background: var(--sf-grid-hd-bg) !important;
@@ -278,7 +280,7 @@
 }
 
 .comm-amount { font-size: .83rem; font-weight: 600; color: var(--sf-text); }
-.comm-cur    { font-size: .66rem; color: var(--sf-text-muted); margin-right: 2px; }
+.comm-cur    { font-size: .66rem; color: var(--sf-text-muted); margin-inline-start: 2px; }
 
 // Date chip
 .date-chip {
@@ -322,15 +324,15 @@
 
 .drawer-panel {
   position: fixed;
-  top: 52px; left: 0;
+  top: 52px; right: 0;
   width: min(44vw, 640px);
   height: calc(100vh - 52px);
   background: var(--sf-bg-card);
-  border-right: 1px solid var(--sf-border);
-  box-shadow: 6px 0 40px rgba(0, 0, 0, .12);
+  border-left: 1px solid var(--sf-border);
+  box-shadow: -6px 0 40px rgba(0, 0, 0, .12);
   z-index: 50;
   overflow: hidden;
-  transform: translateX(-105%);
+  transform: translateX(105%);
   transition: transform .3s cubic-bezier(.4, 0, .2, 1);
 
   &.open { transform: translateX(0); }

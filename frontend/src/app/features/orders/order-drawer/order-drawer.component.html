@@ -386,7 +386,7 @@
 
   <!-- ── Footer actions ─────────────────────────────── -->
   <div class="drawer-footer">
-    <button class="df-btn-primary">
+    <button class="df-btn-primary" (click)="edit.emit(order)">
       <mat-icon>edit</mat-icon> עריכה
     </button>
     @if (order.status !== 'cancelled' && order.status !== 'frozen') {

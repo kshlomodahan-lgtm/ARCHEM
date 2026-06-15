@@ -38,9 +38,31 @@ export class ArachimOrdersService {
   }
 
   getSuppliers(): Observable<{ SupplierID: number; Name: string }[]> {
-    return this.http
-      .get<ApiResponse<any[]>>('/api/orders/meta/suppliers')
-      .pipe(map(r => r.data));
+    return this.http.get<ApiResponse<any[]>>('/api/orders/meta/suppliers').pipe(map(r => r.data));
+  }
+
+  getCustomers(): Observable<{ CustomerID: number; Name: string }[]> {
+    return this.http.get<ApiResponse<any[]>>('/api/orders/meta/customers').pipe(map(r => r.data));
+  }
+
+  getCompanies(): Observable<{ CompanyID: number; Name: string }[]> {
+    return this.http.get<ApiResponse<any[]>>('/api/orders/meta/companies').pipe(map(r => r.data));
+  }
+
+  getCurrencies(): Observable<{ CurrencyID: number; Symbol: string; Name: string }[]> {
+    return this.http.get<ApiResponse<any[]>>('/api/orders/meta/currencies').pipe(map(r => r.data));
+  }
+
+  getNextOrderNumber(year: number): Observable<number> {
+    return this.http.get<ApiResponse<any>>(`/api/orders/meta/next-order-number?year=${year}`).pipe(map(r => r.data.nextNo));
+  }
+
+  createOrder(payload: { header: any; lines: any[] }): Observable<{ orderId: number }> {
+    return this.http.post<ApiResponse<any>>('/api/orders', payload).pipe(map(r => r.data));
+  }
+
+  updateOrder(orderId: number, payload: { header: any; lines: any[] }): Observable<void> {
+    return this.http.put<ApiResponse<any>>(`/api/orders/${orderId}`, payload).pipe(map(() => undefined));
   }
 
   private parseOrders(raw: ArachimOrder[]): ArachimOrder[] {

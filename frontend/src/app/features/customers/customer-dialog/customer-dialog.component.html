@@ -1,0 +1,468 @@
+<kendo-dialog [title]="title" [width]="920" [minWidth]="640">
+
+  @if (loadingData()) {
+    <div class="dialog-loading">
+      <span class="material-icons spin">refresh</span> טוען...
+    </div>
+  } @else {
+
+    <div class="customer-dialog-body" [formGroup]="form">
+
+      <!-- ── Sidebar nav ─────────────────────────────────── -->
+      <nav class="cust-nav">
+        @for (g of groups; track g.id) {
+          <button type="button" class="nav-item"
+                  [class.active]="activeGroup() === g.id"
+                  (click)="activeGroup.set(g.id)">
+            <span class="material-icons nav-icon">{{ g.icon }}</span>
+            {{ g.text }}
+          </button>
+        }
+      </nav>
+
+      <!-- ── Content ─────────────────────────────────────── -->
+      <div class="cust-content">
+
+        <!-- GENERAL ──────────────────────── -->
+        @if (activeGroup() === 'general') {
+          <div class="section-grid">
+
+            <div class="field-row">
+              <div class="field-group">
+                <label>שם קצר עברית</label>
+                <input kendoTextBox formControlName="shortNameHE" placeholder="שם קצר בעברית" />
+              </div>
+              <div class="field-group">
+                <label>שם קצר אנגלית <span class="req">*</span></label>
+                <div class="name-en-wrap">
+                  <input kendoTextBox formControlName="shortNameEN" placeholder="Short name" class="name-en-input" />
+                  <div class="name-en-sub">
+                    <button type="button" class="btn-ai-enrich"
+                            [disabled]="enriching() || !form.get('shortNameEN')?.value"
+                            (click)="enrichFromAI()"
+                            title="חיפוש פרטי לקוח ברשת באמצעות AI">
+                      <span class="material-icons">{{ enriching() ? 'refresh' : 'auto_awesome' }}</span>
+                      {{ enriching() ? 'מנתח...' : 'ניתוח AI' }}
+                    </button>
+                    @if (enrichMsg()) {
+                      <small [class.enrich-ok]="enrichMsg().startsWith('✓')"
+                             [class.enrich-err]="!enrichMsg().startsWith('✓')"
+                             class="enrich-msg">{{ enrichMsg() }}</small>
+                    }
+                  </div>
+                </div>
+                @if (form.get('shortNameEN')?.invalid && form.get('shortNameEN')?.touched) {
+                  <span class="field-error">שדה חובה</span>
+                }
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label>שם מלא עברית</label>
+                <input kendoTextBox formControlName="fullNameHE" placeholder="שם מלא בעברית" />
+              </div>
+              <div class="field-group">
+                <label>שם מלא אנגלית</label>
+                <input kendoTextBox formControlName="fullNameEN" placeholder="Full name in English" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label>סטטוס</label>
+                <div class="seg-ctrl">
+                  <button type="button" class="seg-btn"
+                          [class.seg-on]="!!form.get('isActive')?.value"
+                          (click)="form.get('isActive')?.setValue(true)">
+                    ✓ פעיל
+                  </button>
+                  <button type="button" class="seg-btn"
+                          [class.seg-off]="!form.get('isActive')?.value"
+                          (click)="form.get('isActive')?.setValue(false)">
+                    ✗ מושהה
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        }
+
+        <!-- BUSINESS ─────────────────────── -->
+        @if (activeGroup() === 'business') {
+          <div class="section-grid">
+
+            <div class="field-row">
+              <div class="field-group">
+                <label>מספר ח.פ / עוסק</label>
+                <input kendoTextBox formControlName="companyRegNo" placeholder="מספר רישום חברה" />
+              </div>
+              <div class="field-group">
+                <label>אחוז מע"מ</label>
+                <kendo-numerictextbox formControlName="vatRate"
+                  [format]="'n2'" [min]="0" [max]="100" [decimals]="2"
+                  placeholder="17.00" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label>קידומת PSN</label>
+                <input kendoTextBox formControlName="psnPrefix" placeholder="קידומת (לדוגמה: CUS)" />
+              </div>
+              <div class="field-group">
+                <label>מספר PSN הבא</label>
+                <kendo-numerictextbox formControlName="psnNumerator"
+                  [format]="'n0'" [min]="1" [decimals]="0" placeholder="מספר הבא בסדרה" />
+              </div>
+            </div>
+
+          </div>
+        }
+
+        <!-- ADDRESS ──────────────────────── -->
+        @if (activeGroup() === 'address') {
+          <div class="section-grid">
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>מדינה</label>
+                <kendo-dropdownlist
+                  formControlName="addrCountryID"
+                  [data]="filteredCountries()"
+                  [textField]="'NameHE'"
+                  [valueField]="'CountryID'"
+                  [valuePrimitive]="true"
+                  [filterable]="true"
+                  (filterChange)="onCountryFilter($event)"
+                  placeholder="בחר מדינה...">
+                </kendo-dropdownlist>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label>עיר</label>
+                @if (isIsrael()) {
+                  <kendo-dropdownlist
+                    formControlName="addrCityID"
+                    [data]="filteredCities()"
+                    [textField]="'NameHE'"
+                    [valueField]="'CityID'"
+                    [valuePrimitive]="true"
+                    [filterable]="true"
+                    (filterChange)="onCityFilter($event)"
+                    placeholder="בחר ישוב...">
+                  </kendo-dropdownlist>
+                } @else {
+                  <input kendoTextBox formControlName="addrCityFree" placeholder="שם עיר" />
+                }
+              </div>
+              <div class="field-group">
+                <label>מיקוד</label>
+                <input kendoTextBox formControlName="addrZipCode" placeholder="מיקוד" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>כתובת — שורה 1</label>
+                <input kendoTextBox formControlName="addrLine1" placeholder="רחוב ומספר בית" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>כתובת — שורה 2</label>
+                <input kendoTextBox formControlName="addrLine2" placeholder="קומה, בניין וכד'" />
+              </div>
+            </div>
+
+            <!-- כפתור מפה -->
+            <div class="map-toggle-row">
+              <button type="button" class="btn-map-toggle" (click)="toggleMap()">
+                <span class="material-icons">{{ showMap() ? 'map' : 'location_on' }}</span>
+                {{ showMap() ? 'הסתר מפה' : 'הצג מפה' }}
+              </button>
+              @if (showMap() && mapCoords()) {
+                <button type="button" class="btn-map-refresh" (click)="refreshMap()" title="עדכן מיקום">
+                  <span class="material-icons">refresh</span>
+                </button>
+              }
+            </div>
+
+            <!-- מפה -->
+            @if (showMap()) {
+              <div class="map-container">
+                @if (mapLoading()) {
+                  <div class="map-loading">
+                    <span class="material-icons spin">refresh</span> מחפש כתובת...
+                  </div>
+                } @else if (mapError()) {
+                  <div class="map-error">
+                    <span class="material-icons">location_off</span>
+                    {{ mapError() }}
+                  </div>
+                } @else if (mapSrc()) {
+                  <iframe [src]="mapSrc()!" class="map-iframe"
+                          frameborder="0" scrolling="no"
+                          allowfullscreen></iframe>
+                }
+              </div>
+            }
+
+          </div>
+        }
+
+        <!-- CONTACTS ─────────────────────── -->
+        @if (activeGroup() === 'contacts') {
+          <div class="section-grid">
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>טלפון ראשי</label>
+                <div class="phone-wrap">
+                  <kendo-dropdownlist formControlName="phoneDial" [data]="dialItems()"
+                    [textField]="'label'" [valueField]="'CountryID'" [valuePrimitive]="true"
+                    [filterable]="true" class="dial-drop" />
+                  <input kendoTextBox formControlName="phone" placeholder="מספר טלפון" class="phone-input" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>נייד</label>
+                <div class="phone-wrap">
+                  <kendo-dropdownlist formControlName="mobileDial" [data]="dialItems()"
+                    [textField]="'label'" [valueField]="'CountryID'" [valuePrimitive]="true"
+                    [filterable]="true" class="dial-drop" />
+                  <input kendoTextBox formControlName="mobile" placeholder="מספר נייד" class="phone-input" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>פקס</label>
+                <div class="phone-wrap">
+                  <kendo-dropdownlist formControlName="faxDial" [data]="dialItems()"
+                    [textField]="'label'" [valueField]="'CountryID'" [valuePrimitive]="true"
+                    [filterable]="true" class="dial-drop" />
+                  <input kendoTextBox formControlName="fax" placeholder="מספר פקס" class="phone-input" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>דוא"ל</label>
+                <input kendoTextBox formControlName="email" type="email" placeholder="כתובת אימייל" />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group full">
+                <label>אתר אינטרנט</label>
+                <input kendoTextBox formControlName="website" placeholder="https://..." />
+              </div>
+            </div>
+
+            <!-- שורות קשר דינמיות -->
+            @for (ec of extraContacts(); track ec.methodTypeID; let i = $index) {
+              <div class="field-row extra-contact-row">
+                <div class="field-group full">
+                  <label class="extra-contact-label">
+                    @if (ec.icon) {
+                      <span class="material-icons extra-icon">{{ ec.icon }}</span>
+                    }
+                    {{ ec.nameHE }}
+                    <button type="button" class="btn-remove-contact" (click)="removeExtraContact(i)">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </label>
+                  @if (ec.valueFormat === 'PHONE') {
+                    <div class="phone-wrap">
+                      <kendo-dropdownlist [data]="dialItems()"
+                        [textField]="'label'" [valueField]="'CountryID'" [valuePrimitive]="true"
+                        [filterable]="true" [value]="ec.dialCountryID"
+                        (valueChange)="updateExtraDial(i, $event)"
+                        class="dial-drop" />
+                      <input kendoTextBox [value]="ec.value"
+                        (input)="updateExtraValue(i, $any($event.target).value)"
+                        [placeholder]="ec.nameHE" class="phone-input" />
+                    </div>
+                  } @else {
+                    <input kendoTextBox [value]="ec.value"
+                      (input)="updateExtraValue(i, $any($event.target).value)"
+                      [placeholder]="ec.nameHE" />
+                  }
+                </div>
+              </div>
+            }
+
+            @if (showPicker() && availableTypes().length) {
+              <div class="contact-type-picker">
+                @for (t of availableTypes(); track t.MethodTypeID) {
+                  <button type="button" class="contact-type-btn" (click)="addExtraContact(t)">
+                    @if (t.Icon) {
+                      <span class="material-icons type-icon">{{ t.Icon }}</span>
+                    }
+                    {{ t.NameHE }}
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="contacts-add-row">
+              <button type="button" class="btn-add-contact"
+                      [class.btn-close-picker]="showPicker()"
+                      (click)="showPicker.set(!showPicker())">
+                {{ showPicker() ? '✕ סגור' : '+ נוסף...' }}
+              </button>
+            </div>
+
+          </div>
+        }
+
+        <!-- NOTES ────────────────────────── -->
+        @if (activeGroup() === 'notes') {
+          <div class="section-grid">
+            <div class="field-group full">
+              <label>הערות</label>
+              <textarea formControlName="notes" class="notes-area" rows="8" placeholder="הערות נוספות..."></textarea>
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+
+  }
+
+  <!-- ── Footer ──────────────────────────────────────────── -->
+  <kendo-dialog-actions>
+    <div class="dialog-footer">
+      @if (errorMsg) {
+        <span class="footer-error">{{ errorMsg }}</span>
+      }
+      <button class="btn-save" [disabled]="saving()" (click)="save()">
+        @if (saving()) { <span class="material-icons spin">refresh</span> }
+        ✓ שמור
+      </button>
+      <button class="btn-cancel" (click)="cancel()">ביטול</button>
+    </div>
+  </kendo-dialog-actions>
+
+</kendo-dialog>
+
+<!-- ── AI Enrichment Result Dialog ── -->
+@if (showEnrichDlg()) {
+  <kendo-dialog title="תוצאות חיפוש AI" (close)="closeEnrichDlg()" [width]="460">
+
+    <div class="enrich-dlg-body">
+      <div class="enrich-dlg-intro">
+        <span class="enrich-dlg-icon">🤖</span>
+        <div>
+          <strong>נמצאו הפרטים הבאים עבור:</strong>
+          <div class="enrich-dlg-name">{{ form.get('shortNameEN')?.value }}</div>
+        </div>
+      </div>
+
+      <div class="enrich-rows">
+        @if (enrichResult()?.fullNameEN) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('fullNameEN')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('fullNameEN')" (change)="toggleEnrichField('fullNameEN')" />
+            <span class="enrich-lbl">שם מלא EN</span>
+            <span class="enrich-val ltr">{{ enrichResult().fullNameEN }}</span>
+          </label>
+        }
+        @if (enrichResult()?.fullNameHE) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('fullNameHE')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('fullNameHE')" (change)="toggleEnrichField('fullNameHE')" />
+            <span class="enrich-lbl">שם מלא עברית</span>
+            <span class="enrich-val">{{ enrichResult().fullNameHE }}</span>
+          </label>
+        }
+        @if (enrichResult()?.vatNumber || enrichResult()?.companyRegNo) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('companyRegNo')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('companyRegNo')" (change)="toggleEnrichField('companyRegNo')" />
+            <span class="enrich-lbl">ח.פ / ע.מ</span>
+            <span class="enrich-val ltr">{{ enrichResult().companyRegNo || enrichResult().vatNumber }}</span>
+          </label>
+        }
+        @if (enrichResult()?.phone) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('phone')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('phone')" (change)="toggleEnrichField('phone')" />
+            <span class="enrich-lbl">טלפון</span>
+            <span class="enrich-val ltr">{{ enrichResult().phone }}</span>
+          </label>
+        }
+        @if (enrichResult()?.email) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('email')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('email')" (change)="toggleEnrichField('email')" />
+            <span class="enrich-lbl">דוא"ל</span>
+            <span class="enrich-val ltr">{{ enrichResult().email }}</span>
+          </label>
+        }
+        @if (enrichResult()?.website) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('website')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('website')" (change)="toggleEnrichField('website')" />
+            <span class="enrich-lbl">אתר</span>
+            <span class="enrich-val ltr">{{ enrichResult().website }}</span>
+          </label>
+        }
+        @if (enrichResult()?.addressLine1) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('addressLine1')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('addressLine1')" (change)="toggleEnrichField('addressLine1')" />
+            <span class="enrich-lbl">כתובת</span>
+            <span class="enrich-val">{{ enrichResult().addressLine1 }}</span>
+          </label>
+        }
+        @if (enrichResult()?.city) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('city')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('city')" (change)="toggleEnrichField('city')" />
+            <span class="enrich-lbl">עיר / ישוב</span>
+            <span class="enrich-val">{{ enrichResult().city }}</span>
+          </label>
+        }
+        @if (enrichResult()?.country) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('country')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('country')" (change)="toggleEnrichField('country')" />
+            <span class="enrich-lbl">מדינה</span>
+            <span class="enrich-val ltr">{{ enrichResult().country }}</span>
+          </label>
+        }
+        @if (enrichResult()?.notes) {
+          <label class="enrich-row" [class.row-off]="!isEnrichSelected('notes')">
+            <input type="checkbox" class="enrich-cb" [checked]="isEnrichSelected('notes')" (change)="toggleEnrichField('notes')" />
+            <span class="enrich-lbl">תיאור</span>
+            <span class="enrich-val">{{ enrichResult().notes }}</span>
+          </label>
+        }
+      </div>
+
+      @if (enrichResult()?.sources?.length) {
+        <div class="enrich-sources">
+          <span class="enrich-sources-title">מקורות:</span>
+          @for (src of enrichResult().sources; track src) {
+            <span class="enrich-source-tag">{{ src }}</span>
+          }
+        </div>
+      }
+
+      <div class="enrich-dlg-note">
+        הנתונים נאספו ממידע אימון של AI — בדוק ואשר לפני שמירה.
+      </div>
+    </div>
+
+    <kendo-dialog-actions>
+      <div class="enrich-dlg-footer">
+        <button type="button" class="btn-save" (click)="applyEnrichment()">✓ החל פרטים</button>
+        <button type="button" class="btn-cancel" (click)="closeEnrichDlg()">ביטול</button>
+      </div>
+    </kendo-dialog-actions>
+
+  </kendo-dialog>
+}

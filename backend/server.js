@@ -8,7 +8,7 @@ const app = express();
 app.set('trust proxy', true);
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }));
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] }));
 app.use(express.json());
 app.use('/api', (_req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -19,8 +19,12 @@ app.use('/api', (_req, res, next) => {
 app.use(express.static(path.join(__dirname, '../frontend/dist/archem/browser')));
 
 // ── API Routes ──────────────────────────────────────────
-app.use('/api/auth',   require('./routes/auth'));
-app.use('/api/orders', require('./routes/orders'));
+app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/orders',    require('./routes/orders'));
+app.use('/api/suppliers', require('./routes/suppliers'));
+app.use('/api/customers', require('./routes/customers'));
+app.use('/api/meta',         require('./routes/meta'));
+app.use('/api/order-intake', require('./routes/orderIntake'));
 
 app.use('/api/{*path}', (_req, res) =>
   res.status(404).json({ success: false, message: 'Endpoint not found' })

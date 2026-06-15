@@ -9,6 +9,7 @@ import { ButtonsModule } from '@progress/kendo-angular-buttons';
 import { MatIconModule } from '@angular/material/icon';
 import { ArachimOrder, OrderStatus, CommissionType } from '../../core/models/arachim/order.model';
 import { OrderDrawerComponent } from './order-drawer/order-drawer.component';
+import { OrderDialogComponent } from './order-dialog/order-dialog.component';
 import { ArachimOrdersService } from '../../core/services/arachim-orders.service';
 
 @Component({
@@ -19,6 +20,7 @@ import { ArachimOrdersService } from '../../core/services/arachim-orders.service
     GridModule, ButtonsModule,
     MatIconModule,
     OrderDrawerComponent,
+    OrderDialogComponent,
     DatePipe,
   ],
   templateUrl: './orders.component.html',
@@ -148,7 +150,29 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  closeDrawer() { this.selectedOrder.set(null); }
+  closeDrawer()   { this.selectedOrder.set(null); }
+
+  // ── Dialog ────────────────────────────────────────────────────────
+  dialogOrder = signal<ArachimOrder | null>(null);
+  showDialog  = signal(false);
+
+  openNewDialog()            { this.dialogOrder.set(null); this.showDialog.set(true); }
+  openEditDialog(o: ArachimOrder) {
+    this.selectedOrder.set(null);
+    this.dialogOrder.set(o);
+    this.showDialog.set(true);
+  }
+
+  onDialogSaved() {
+    this.showDialog.set(false);
+    this.loading.set(true);
+    this.svc.getOrders().subscribe({
+      next: orders => { this.allOrders.set(orders); this.loading.set(false); this.applyFilters(); },
+      error: ()     => { this.loading.set(false); },
+    });
+  }
+
+  onDialogCancelled() { this.showDialog.set(false); }
 
   // ── Display helpers ───────────────────────────────────────────────
   readonly statusLabels: Record<OrderStatus, string> = {

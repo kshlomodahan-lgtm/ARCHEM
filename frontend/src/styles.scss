@@ -196,6 +196,46 @@ html[data-scheme="amber"] {
   --sf-grid-hd-border: #fde68a;
 }
 
+// ── Kendo DropdownList — global overrides ──────────────────
+
+kendo-dropdownlist.k-picker {
+  background: var(--sf-bg-card) !important;
+  border: 1px solid var(--sf-border) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  color: var(--sf-text) !important;
+}
+
+kendo-dropdownlist.k-picker:hover,
+kendo-dropdownlist.k-picker:focus-within {
+  border-color: var(--sf-primary) !important;
+}
+
+kendo-dropdownlist .k-input-inner {
+  direction: rtl !important;
+  text-align: right !important;
+  padding: 8px 12px !important;
+  font-size: .87rem !important;
+  line-height: 1.6 !important;
+  font-family: 'Noto Sans Hebrew', sans-serif !important;
+  color: var(--sf-text) !important;
+  background: transparent !important;
+}
+
+kendo-dropdownlist .k-input-value-text {
+  direction: rtl !important;
+  text-align: right !important;
+  font-size: .87rem !important;
+  font-family: 'Noto Sans Hebrew', sans-serif !important;
+  color: var(--sf-text) !important;
+}
+
+kendo-dropdownlist .k-input-button {
+  background: transparent !important;
+  border: none !important;
+  color: var(--sf-text-secondary) !important;
+}
+
 // ── Dark Theme ─────────────────────────────────────────────
 html[data-theme="dark"] {
   --sf-bg:             #0f172a;

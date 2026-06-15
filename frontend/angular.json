@@ -46,7 +46,7 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": { "proxyConfig": "proxy.conf.json" },
+          "options": { "proxyConfig": "proxy.conf.json", "port": 4201 },
           "configurations": {
             "production": { "buildTarget": "archem:build:production" },
             "development": { "buildTarget": "archem:build:development" }

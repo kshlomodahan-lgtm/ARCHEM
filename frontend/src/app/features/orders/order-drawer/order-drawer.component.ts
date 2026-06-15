@@ -15,6 +15,7 @@ type DrawerTab = 'details' | 'lines' | 'shipment' | 'finance';
 export class OrderDrawerComponent {
   @Input() order!: ArachimOrder;
   @Output() closed = new EventEmitter<void>();
+  @Output() edit   = new EventEmitter<ArachimOrder>();
 
   tab = signal<DrawerTab>('details');
 

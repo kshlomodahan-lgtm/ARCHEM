@@ -6,7 +6,7 @@
       <h1>הזמנות</h1>
       <p>{{ gridData.length }} הזמנות מוצגות</p>
     </div>
-    <button class="btn-save">✓ הזמנה חדשה</button>
+    <button class="btn-save" (click)="openNewDialog()">✓ הזמנה חדשה</button>
   </div>
 
   <!-- ── KPI Strip ────────────────────────────────────── -->
@@ -138,7 +138,7 @@
       <ng-template kendoGridCellTemplate let-o>
         <div class="entity-cell">
           <span class="entity-supplier">{{ o.supplierShort }}</span>
-          <span class="entity-arrow">→</span>
+          <span class="entity-arrow">←</span>
           <span class="entity-customer">{{ o.customerShort }}</span>
         </div>
       </ng-template>
@@ -221,7 +221,17 @@
   @if (selectedOrder()) {
     <app-order-drawer
       [order]="selectedOrder()!"
-      (closed)="closeDrawer()">
+      (closed)="closeDrawer()"
+      (edit)="openEditDialog($event)">
     </app-order-drawer>
   }
 </div>
+
+<!-- ── Order Dialog (add / edit) ─────────────────────── -->
+@if (showDialog()) {
+  <app-order-dialog
+    [order]="dialogOrder()"
+    (saved)="onDialogSaved()"
+    (cancelled)="onDialogCancelled()">
+  </app-order-dialog>
+}

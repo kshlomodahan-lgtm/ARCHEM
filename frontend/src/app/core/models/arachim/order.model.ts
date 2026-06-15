@@ -21,6 +21,7 @@ export interface ArachimOrderLine {
   commissionAmount: number;
   deliveryDate: Date | null;
   itemLinkId: number | null;
+  isFrameContract: boolean;
 }
 
 export interface ArachimOrderFinancial {

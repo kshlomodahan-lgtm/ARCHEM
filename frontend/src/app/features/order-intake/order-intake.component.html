@@ -1,0 +1,276 @@
+<div class="intake-page">
+
+  <!-- ── Page Header ───────────────────────────────────────── -->
+  <div class="page-header">
+    <h1>קליטת מסמך הזמנה</h1>
+    <p>העלה קובץ PDF, נתח עם AI ואשר נתונים לייבוא</p>
+  </div>
+
+  <!-- ── Upload Card ────────────────────────────────────────── -->
+  <div class="upload-card" [class.compact]="!!result()">
+
+    <label class="drop-zone" [class.has-file]="selectedFile()">
+      <input type="file" accept=".pdf" class="file-input" (change)="onFileSelected($event)" />
+      @if (!selectedFile()) {
+        <span class="material-icons drop-icon">upload_file</span>
+        <div class="drop-title">גרור קובץ PDF לכאן</div>
+        <div class="drop-sub">או לחץ לבחירת קובץ</div>
+      } @else {
+        <span class="material-icons drop-icon file-ok">picture_as_pdf</span>
+        <div class="drop-title">{{ selectedFile()!.name }}</div>
+        <div class="drop-sub">{{ fileSizeLabel }} — לחץ להחלפה</div>
+      }
+    </label>
+
+    <button class="btn-analyze" [disabled]="!selectedFile() || analyzing()" (click)="analyze()">
+      @if (analyzing()) {
+        <span class="material-icons spin">refresh</span> מנתח...
+      } @else {
+        <span class="material-icons">auto_awesome</span> נתח מסמך AI
+      }
+    </button>
+
+    @if (analyzeError()) {
+      <div class="analyze-error">
+        <span class="material-icons">error_outline</span>
+        {{ analyzeError() }}
+      </div>
+    }
+
+  </div>
+
+  <!-- ── Result Panel ───────────────────────────────────────── -->
+  @if (result()) {
+
+    <div class="result-wrapper">
+
+      <!-- Side nav + Content -->
+      <div class="result-panel">
+
+        <!-- ── Side nav ────────────────────────────── -->
+        <nav class="result-nav">
+          @for (item of navItems; track item.id) {
+            <button class="nav-item" [class.active]="activeSection() === item.id"
+                    (click)="activeSection.set(item.id)">
+              <span class="material-icons nav-icon">{{ item.icon }}</span>
+              <span class="nav-label">{{ item.label }}</span>
+              @if (item.id === 'lines') {
+                <span class="nav-badge">{{ lineItems().length }}</span>
+              }
+              @if (item.id === 'from' && result()!.fromParty?.found) {
+                <span class="material-icons nav-check">verified</span>
+              }
+              @if (item.id === 'to' && result()!.toParty?.found) {
+                <span class="material-icons nav-check">verified</span>
+              }
+            </button>
+          }
+        </nav>
+
+        <!-- ── Content area ────────────────────────── -->
+        <div class="result-content">
+
+          <!-- SECTION: כותרת הזמנה -->
+          @if (activeSection() === 'header') {
+            <div class="section-title-bar">
+              <span class="material-icons">receipt_long</span>
+              <span>כותרת ההזמנה</span>
+              <span class="section-badge">{{ headerFields().length }} שדות</span>
+            </div>
+            <div class="field-grid">
+              @for (f of headerFields(); track f.key) {
+                <div class="field-row" [class.field-off]="!f.accepted" (click)="toggleHeaderField(f.key)">
+                  <span class="material-icons field-cb">{{ f.accepted ? 'check_box' : 'check_box_outline_blank' }}</span>
+                  <span class="field-label">{{ f.label }}</span>
+                  <span class="field-value ltr">{{ f.value ?? '—' }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- SECTION: מפיק ההזמנה -->
+          @if (activeSection() === 'from') {
+            <div class="section-title-bar">
+              <span class="material-icons">business</span>
+              <span>מפיק ההזמנה</span>
+              @if (result()!.fromParty?.found) {
+                <span class="party-badge found">
+                  <span class="material-icons">verified</span>
+                  נמצא: {{ result()!.fromParty.systemName }} (#{{ result()!.fromParty.customerID }})
+                </span>
+              } @else {
+                <span class="party-badge not-found">
+                  <span class="material-icons">person_add</span>
+                  לא קיים במערכת
+                </span>
+              }
+            </div>
+            <div class="field-grid">
+              @for (f of fromFields(); track f.key) {
+                @if (f.value) {
+                  <div class="field-row" [class.field-off]="!f.accepted" (click)="toggleFromField(f.key)">
+                    <span class="material-icons field-cb">{{ f.accepted ? 'check_box' : 'check_box_outline_blank' }}</span>
+                    <span class="field-label">{{ f.label }}</span>
+                    <span class="field-value ltr">{{ f.value }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <!-- SECTION: ספק -->
+          @if (activeSection() === 'to') {
+            <div class="section-title-bar">
+              <span class="material-icons">local_shipping</span>
+              <span>ספק</span>
+              @if (result()!.toParty?.found) {
+                <span class="party-badge found">
+                  <span class="material-icons">verified</span>
+                  נמצא: {{ result()!.toParty.systemName }} (#{{ result()!.toParty.supplierID }})
+                </span>
+              } @else {
+                <span class="party-badge not-found">
+                  <span class="material-icons">add_business</span>
+                  לא קיים במערכת
+                </span>
+              }
+            </div>
+            <div class="field-grid">
+              @for (f of toFields(); track f.key) {
+                @if (f.value) {
+                  <div class="field-row" [class.field-off]="!f.accepted" (click)="toggleToField(f.key)">
+                    <span class="material-icons field-cb">{{ f.accepted ? 'check_box' : 'check_box_outline_blank' }}</span>
+                    <span class="field-label">{{ f.label }}</span>
+                    <span class="field-value ltr">{{ f.value }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <!-- SECTION: שורות הזמנה -->
+          @if (activeSection() === 'lines') {
+            <div class="section-title-bar">
+              <span class="material-icons">format_list_numbered</span>
+              <span>שורות הזמנה</span>
+              <span class="section-badge">{{ acceptedLinesCount() }} / {{ lineItems().length }} מאושרות</span>
+              <div class="lines-toolbar">
+                <button class="btn-sel-all" (click)="selectAll(); $event.stopPropagation()">
+                  <span class="material-icons">done_all</span> סמן הכל
+                </button>
+                <button class="btn-desel-all" (click)="deselectAll(); $event.stopPropagation()">
+                  <span class="material-icons">remove_done</span> בטל הכל
+                </button>
+              </div>
+            </div>
+
+            <div class="lines-body">
+              @for (line of lineItems(); track line.lineNumber; let i = $index) {
+                <div class="line-card" [class.line-off]="!line.accepted" (click)="toggleLine(i)">
+
+                  <div class="line-top">
+                    <span class="material-icons line-cb">{{ line.accepted ? 'check_box' : 'check_box_outline_blank' }}</span>
+                    <span class="line-num">{{ line.lineNumber }}</span>
+                    <span class="line-part ltr">{{ line.partNumber }}</span>
+                    <span class="line-desc">{{ line.description }}</span>
+                    <span class="match-badge" [ngClass]="matchClass(line)">
+                      @if (line.matchType === 'exact-part') {
+                        <span class="material-icons">check_circle</span>
+                      } @else if (line.found) {
+                        <span class="material-icons">search</span>
+                      } @else {
+                        <span class="material-icons">cancel</span>
+                      }
+                      {{ matchLabel(line) }}
+                    </span>
+                  </div>
+
+                  <div class="line-doc-row">
+                    <span class="line-meta">כמות: <strong>{{ line.quantity | number }} {{ line.unit }}</strong></span>
+                    <span class="line-meta">מחיר יחידה: <strong>{{ line.currency ?? '' }} {{ line.unitPrice | number:'1.2-2' }}</strong></span>
+                    <span class="line-meta">הנחה: <strong>{{ line.discount }}%</strong></span>
+                    <span class="line-meta line-total">סה"כ: <strong>{{ line.extendedPrice | number:'1.2-2' }}</strong></span>
+                    <span class="line-meta">אספקה: <strong>{{ line.dueDate }}</strong></span>
+                  </div>
+
+                  @if (line.found) {
+                    <div class="line-system-row">
+                      <span class="material-icons sys-icon">inventory_2</span>
+                      <span class="sys-code ltr">{{ line.systemItemCode }}</span>
+                      <span class="sys-name">{{ line.systemName }}</span>
+                      @if (line.supplierPartNo) {
+                        <span class="sys-spart ltr">(מק"ט ספק: {{ line.supplierPartNo }})</span>
+                      }
+                      @if (line.unitMatch === false) {
+                        <span class="unit-warn">
+                          <span class="material-icons">warning</span> יחידת מידה שונה
+                        </span>
+                      }
+                    </div>
+                  } @else {
+                    <div class="line-system-row not-found-row">
+                      <span class="material-icons sys-icon">warning_amber</span>
+                      <span>פריט לא קיים במערכת — יש ליצור ידנית</span>
+                    </div>
+                  }
+
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+      </div>
+
+      <!-- ── Fixed Summary Bar ──────────────────────── -->
+      <div class="summary-bar">
+
+        <!-- שורה 1: סיכום כספי מהמסמך -->
+        <div class="summary-totals">
+          <span class="sum-item">
+            לפני מע"מ:
+            <strong class="ltr">{{ result()!.totals.currency }} {{ result()!.totals.totalPrice | number:'1.2-2' }}</strong>
+          </span>
+          <span class="sum-divider">|</span>
+          <span class="sum-item">
+            מע"מ:
+            <strong class="ltr">{{ result()!.totals.currency }} {{ result()!.totals.tax | number:'1.2-2' }}</strong>
+          </span>
+          <span class="sum-divider">|</span>
+          <span class="sum-item grand">
+            <span class="material-icons">payments</span>
+            לתשלום:
+            <strong class="ltr">{{ result()!.totals.currency }} {{ result()!.totals.grandTotal | number:'1.2-2' }}</strong>
+          </span>
+        </div>
+
+        <!-- שורה 2: פעולות + סיכום בחירה -->
+        <div class="summary-actions">
+          <button class="btn-sel-all" (click)="selectAll()">
+            <span class="material-icons">done_all</span> סמן הכל
+          </button>
+          <button class="btn-desel-all" (click)="deselectAll()">
+            <span class="material-icons">remove_done</span> בטל הכל
+          </button>
+
+          <div class="sel-info">
+            <span class="material-icons">check_circle</span>
+            <span>{{ acceptedLinesCount() }} / {{ lineItems().length }} שורות נבחרו</span>
+            <span class="sel-divider">|</span>
+            <span>סה"כ נבחרו:</span>
+            <strong class="ltr sel-total">{{ result()!.totals.currency }} {{ selectedTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <button class="btn-import" disabled title="בקרוב">
+            <span class="material-icons">save_alt</span>
+            ייבא להזמנה
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  }
+
+</div>

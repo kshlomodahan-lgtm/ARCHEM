@@ -25,7 +25,7 @@ router.get('/meta/suppliers', requireAuth, async (req, res) => {
   try {
     const pool   = await getPool();
     const result = await pool.request().query(`
-      SELECT SupplierID, ISNULL(NULLIF(RTRIM(ShortName),''), RTRIM(FullName)) AS Name
+      SELECT SupplierID, ISNULL(NULLIF(RTRIM(ShortNameHE),''), ISNULL(NULLIF(RTRIM(ShortNameEN),''), RTRIM(FullNameHE))) AS Name
       FROM tblSuppliers WHERE IsActive=1 ORDER BY Name
     `);
     res.json({ success: true, data: result.recordset, message: '' });
@@ -77,7 +77,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     if (search) {
       req2.input('Search', sql.NVarChar(100), `%${search}%`);
-      where.push(`(s.FullName LIKE @Search OR c.FullNameHE LIKE @Search OR c.FullNameEN LIKE @Search OR CAST(o.OrderNumber AS nvarchar) LIKE @Search)`);
+      where.push(`(s.FullNameHE LIKE @Search OR s.FullNameEN LIKE @Search OR c.FullNameHE LIKE @Search OR c.FullNameEN LIKE @Search OR CAST(o.OrderNumber AS nvarchar) LIKE @Search)`);
     }
 
     const whereClause = where.join(' AND ');
@@ -85,7 +85,7 @@ router.get('/', requireAuth, async (req, res) => {
     const result = await req2.query(`
       SELECT
         o.OrderID, o.CompanyID, o.OrderYear, o.OrderNumber, o.GroupNo,
-        o.SupplierID, ISNULL(s.FullName, CAST(o.SupplierID AS nvarchar)) AS SupplierName,
+        o.SupplierID, ISNULL(ISNULL(s.ShortNameHE, s.ShortNameEN), CAST(o.SupplierID AS nvarchar)) AS SupplierName,
         o.CustomerID, ISNULL(c.FullNameHE, c.FullNameEN) AS CustomerName,
         o.OrderDate, o.ETA, o.ATA,
         o.TotalValue, o.TotalCommission, o.CommissionReceived, o.CommissionAmtReceived,
@@ -151,8 +151,8 @@ router.get('/:orderId', requireAuth, async (req, res) => {
       .input('OrderID', sql.BigInt, orderId)
       .query(`
         SELECT o.*,
-          ISNULL(s.FullName, CAST(o.SupplierID AS nvarchar)) AS SupplierName,
-          s.ShortName AS SupplierShortName,
+          ISNULL(ISNULL(s.ShortNameHE, s.ShortNameEN), CAST(o.SupplierID AS nvarchar)) AS SupplierName,
+          ISNULL(s.ShortNameHE, s.ShortNameEN) AS SupplierShortName,
           ISNULL(c.FullNameHE, c.FullNameEN) AS CustomerName,
           c.ShortNameHE AS CustomerShortName,
           ISNULL(cur.CurrencySymbol,'') AS CurrencySymbol,

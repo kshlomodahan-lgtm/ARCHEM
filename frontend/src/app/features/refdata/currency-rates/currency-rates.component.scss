@@ -1,0 +1,39 @@
+@use '../refdata-shared' as *;
+
+.filter-select {
+  padding: 0 10px;
+  height: 38px;
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  font-size: .84rem;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  background: var(--sf-bg-card);
+  color: var(--sf-text);
+  outline: none;
+  direction: rtl;
+  min-width: 200px;
+}
+
+.rate-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+  color: var(--sf-primary);
+}
+
+.no-rate {
+  color: var(--sf-text-muted);
+  font-size: .8rem;
+}
+
+.readonly-field {
+  padding: 8px 10px;
+  border: 1px solid var(--sf-border);
+  border-radius: 7px;
+  font-size: .84rem;
+  color: var(--sf-text-secondary);
+  background: var(--sf-bg);
+  direction: rtl;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}

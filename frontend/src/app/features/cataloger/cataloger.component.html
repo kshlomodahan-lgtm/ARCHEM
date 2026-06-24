@@ -1,0 +1,277 @@
+<div class="cataloger-wrap">
+
+  <!-- ══ RIGHT PANEL — QUEUE LIST ══ -->
+  <div class="queue-panel">
+    <div class="queue-header">
+      <h2 class="queue-title">תור המקטלג</h2>
+      <div class="queue-filters">
+        <button class="filter-btn" [class.active]="activeFilter() === 'PENDING'" (click)="setFilter('PENDING')">
+          ממתינים <span class="cnt">{{ queueCounts().PENDING || 0 }}</span>
+        </button>
+        <button class="filter-btn" [class.active]="activeFilter() === 'DONE'" (click)="setFilter('DONE')">
+          טופלו <span class="cnt">{{ queueCounts().DONE || 0 }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="queue-list">
+      @if (loadingQueue()) {
+        <div class="queue-loading">טוען...</div>
+      }
+      @if (!loadingQueue() && queueItems().length === 0) {
+        <div class="queue-empty">
+          <mat-icon>check_circle</mat-icon>
+          <span>התור ריק</span>
+        </div>
+      }
+      @for (item of queueItems(); track item.QueueID) {
+        <div class="queue-item" [class.selected]="selectedItem()?.QueueID === item.QueueID"
+             (click)="selectItem(item)">
+          <div class="qi-sku">{{ item.SupplierSKU }}</div>
+          <div class="qi-desc">{{ item.CustomerSKUDesc || item.CustomerSKU || '—' }}</div>
+          <div class="qi-meta">
+            <span>{{ item.SupplierName }}</span>
+            <span class="qi-sep">→</span>
+            <span>{{ item.CustomerName }}</span>
+          </div>
+          @if (item.Decision) {
+            <span class="qi-decision qi-decision-{{ item.Decision.toLowerCase() }}">{{ item.Decision }}</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ══ LEFT PANEL — DETAIL ══ -->
+  <div class="detail-panel">
+    @if (!selectedItem()) {
+      <div class="no-selection">
+        <mat-icon>auto_awesome</mat-icon>
+        <p>בחר פריט מהתור לבדיקה</p>
+      </div>
+    }
+
+    @if (selectedItem(); as item) {
+      <!-- ── Item Header ── -->
+      <div class="detail-header">
+        <div class="detail-skus">
+          <div class="sku-row">
+            <span class="sku-label">מק"ט ספק</span>
+            <span class="sku-val supplier">{{ item.SupplierSKU }}</span>
+            <span class="sku-party">{{ item.SupplierName }}</span>
+          </div>
+          <div class="sku-arrow">→</div>
+          <div class="sku-row">
+            <span class="sku-label">מק"ט לקוח</span>
+            <span class="sku-val customer">{{ item.CustomerSKU }}</span>
+            <span class="sku-party">{{ item.CustomerName }}</span>
+          </div>
+        </div>
+        @if (item.CustomerSKUDesc) {
+          <div class="detail-desc">{{ item.CustomerSKUDesc }}</div>
+        }
+      </div>
+
+      <!-- ── AI Section ── -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">
+            <mat-icon>auto_awesome</mat-icon> AI — פריטים דומים בקטלוג
+          </span>
+          <button class="btn-ai" (click)="runAI()" [disabled]="aiLoading()">
+            {{ aiLoading() ? 'מחפש...' : 'חפש דמיון' }}
+          </button>
+        </div>
+
+        @if (aiLoading()) {
+          <div class="ai-loading">
+            <span class="k-icon k-i-loading"></span> AI סורק את הקטלוג...
+          </div>
+        }
+        @if (aiError()) {
+          <div class="ai-error">{{ aiError() }}</div>
+        }
+        @if (!aiLoading() && aiSuggestions().length === 0 && item.AIStatus === 'DONE') {
+          <div class="ai-empty">לא נמצאו פריטים דומים — ככל הנראה מדובר בפריט חדש</div>
+        }
+        @for (sug of aiSuggestions(); track sug.itemId) {
+          <div class="suggestion-card">
+            <div class="sug-score-wrap">
+              <div class="sug-score" [class]="scoreClass(sug.score)">{{ scoreLabel(sug.score) }}</div>
+            </div>
+            <div class="sug-info">
+              <div class="sug-name">{{ sug.itemName }}</div>
+              <div class="sug-sku">קוד: {{ sug.itemCode || '—' }} | מק"ט ספק: {{ sug.supplierSku || '—' }}</div>
+              <div class="sug-reason">{{ sug.reason }}</div>
+            </div>
+            <button class="btn-link-sug" (click)="openLinkPanel(sug)" title="קשר לפריט זה">
+              <mat-icon>link</mat-icon> קשר
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- ── Decision Buttons ── -->
+      @if (!item.Decision) {
+        <div class="decision-bar">
+          <button class="btn-decision btn-link" (click)="openLinkPanel()">
+            <mat-icon>link</mat-icon> קשר לפריט קיים
+          </button>
+          <button class="btn-decision btn-create" (click)="openCreateForm()">
+            <mat-icon>add_circle</mat-icon> צור פריט חדש
+          </button>
+          <button class="btn-decision btn-skip" (click)="skip()">
+            <mat-icon>skip_next</mat-icon> דלג
+          </button>
+        </div>
+
+        <!-- ── LINK PANEL ── -->
+        @if (showLinkPanel()) {
+          <div class="action-panel">
+            <h4 class="panel-title">קישור לפריט קיים</h4>
+            <div class="search-row">
+              <div class="search-wrap">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input class="search-input" type="text" placeholder="חפש לפי שם / מק&quot;ט..."
+                       [(ngModel)]="itemSearchQ"
+                       (input)="searchItems()" />
+              </div>
+            </div>
+
+            @if (searchingItems()) {
+              <div class="searching">מחפש...</div>
+            }
+
+            @for (res of itemSearchRes(); track res.ItemID) {
+              <div class="search-result" (click)="selectExistingItem(res)"
+                   [class.selected-res]="selectedExistingItem()?.ItemID === res.ItemID">
+                <div class="res-name">{{ res.NameHE || res.NameEN }}</div>
+                <div class="res-meta">{{ res.ItemCode }} | {{ res.SupplierSKU }} | {{ res.SupplierName }}</div>
+              </div>
+            }
+
+            @if (selectedExistingItem(); as sel) {
+              <div class="selected-item-box">
+                <mat-icon>check_circle</mat-icon>
+                <div>
+                  <div class="sel-name">{{ sel.NameHE || sel.NameEN }}</div>
+                  <div class="sel-meta">{{ sel.ItemCode }} | {{ sel.SupplierSKU }}</div>
+                </div>
+              </div>
+              <button class="btn-confirm" (click)="confirmLink()" [disabled]="saving()">
+                ✓ אשר קישור
+              </button>
+            }
+          </div>
+        }
+
+        <!-- ── CREATE FORM ── -->
+        @if (showCreateForm()) {
+          <div class="action-panel">
+            <h4 class="panel-title">יצירת פריט חדש בקטלוג</h4>
+            <form [formGroup]="createForm" class="rd-form">
+              <div class="form-group required">
+                <label class="form-label">שם הפריט בעברית</label>
+                <input class="form-input" formControlName="nameHe" placeholder="שם הפריט" />
+                @if (createForm.get('nameHe')?.invalid && createForm.get('nameHe')?.touched) {
+                  <span class="form-err">שדה חובה</span>
+                }
+              </div>
+              <div class="form-group">
+                <label class="form-label">שם הפריט באנגלית</label>
+                <input class="form-input" formControlName="nameEn" placeholder="Item name in English" dir="ltr" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">קוד פריט פנימי</label>
+                <input class="form-input" formControlName="itemCode" placeholder="לדוגמה: GL-500-WINE" dir="ltr" />
+              </div>
+              <button class="btn-confirm" type="button" (click)="confirmCreate()" [disabled]="saving()">
+                ✓ צור פריט וקשר
+              </button>
+            </form>
+          </div>
+        }
+      } @else {
+        <div class="decision-done">
+          <mat-icon>check_circle</mat-icon>
+          <span>הפריט טופל — {{ item.Decision }}</span>
+        </div>
+      }
+
+      <!-- ── Attributes Section ── -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title"><mat-icon>label</mat-icon> מאפיינים</span>
+        </div>
+
+        @for (attr of linkedAttrs(); track attr.itemLinkAttrId) {
+          <div class="attr-card">
+            <div class="attr-card-header">
+              <span class="attr-name">{{ attr.templateName }}</span>
+              @if (attr.isMandatory) { <span class="badge-mandatory">חובה</span> }
+              <button class="btn-remove-attr" (click)="removeAttr(attr.itemLinkAttrId)" title="הסר מאפיין">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            @for (field of attr.fields; track field.fieldId) {
+              <div class="attr-field-row">
+                <label class="attr-field-label">
+                  {{ field.fieldName }}
+                  @if (field.isRequired) { <span class="req">*</span> }
+                </label>
+                @if (field.dataType === 'TEXT') {
+                  <input class="form-input attr-input" type="text"
+                         [(ngModel)]="attrValues[attr.itemLinkAttrId][field.fieldId]"
+                         [ngModelOptions]="{standalone: true}" />
+                }
+                @if (field.dataType === 'NUMBER') {
+                  <input class="form-input attr-input" type="number"
+                         [(ngModel)]="attrValues[attr.itemLinkAttrId][field.fieldId]"
+                         [ngModelOptions]="{standalone: true}" />
+                }
+                @if (field.dataType === 'BOOL') {
+                  <div class="seg-ctrl seg-sm">
+                    <button type="button" class="seg-btn"
+                            [class.seg-on]="attrValues[attr.itemLinkAttrId][field.fieldId] === true || attrValues[attr.itemLinkAttrId][field.fieldId] === 1"
+                            (click)="attrValues[attr.itemLinkAttrId][field.fieldId] = true">כן</button>
+                    <button type="button" class="seg-btn"
+                            [class.seg-off]="!attrValues[attr.itemLinkAttrId][field.fieldId]"
+                            (click)="attrValues[attr.itemLinkAttrId][field.fieldId] = false">לא</button>
+                  </div>
+                }
+                @if (field.dataType === 'DATE') {
+                  <input class="form-input attr-input" type="date"
+                         [(ngModel)]="attrValues[attr.itemLinkAttrId][field.fieldId]"
+                         [ngModelOptions]="{standalone: true}" />
+                }
+                @if (field.dataType === 'LIST' || field.dataType === 'MULTILIST') {
+                  <select class="form-input form-select attr-input"
+                          [(ngModel)]="attrValues[attr.itemLinkAttrId][field.fieldId]"
+                          [ngModelOptions]="{standalone: true}">
+                    <option [value]="null">— בחר —</option>
+                    @for (opt of field.options; track opt.OptionID) {
+                      <option [value]="opt.OptionID">{{ opt.OptionValue }}</option>
+                    }
+                  </select>
+                }
+              </div>
+            }
+            <button class="btn-save-attr" (click)="saveAttrValues(attr.itemLinkAttrId)">✓ שמור מאפיין</button>
+          </div>
+        }
+
+        <!-- Add template -->
+        <div class="add-attr-row">
+          <select class="form-input form-select" [(ngModel)]="addingTemplateId" [ngModelOptions]="{standalone: true}">
+            <option [value]="null">— הוסף מאפיין —</option>
+            @for (t of unusedTemplates(); track t.AttributeTemplateID) {
+              <option [value]="t.AttributeTemplateID">{{ t.TemplateName }}</option>
+            }
+          </select>
+          <button class="btn-add-attr" (click)="addAttributeTemplate()" [disabled]="!addingTemplateId">הוסף</button>
+        </div>
+      </div>
+    }
+  </div>
+
+</div>

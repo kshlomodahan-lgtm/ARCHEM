@@ -16,8 +16,14 @@
 
       <div class="field-group">
         <label class="field-label">סיסמה</label>
-        <input class="field-input" type="password" [(ngModel)]="password" name="password"
-               placeholder="הזן סיסמה" autocomplete="current-password" />
+        <div class="pass-wrap">
+          <input class="field-input pass-input" [type]="showPass ? 'text' : 'password'"
+                 [(ngModel)]="password" name="password"
+                 placeholder="הזן סיסמה" autocomplete="current-password" />
+          <button type="button" class="pass-eye" (click)="showPass = !showPass" tabindex="-1">
+            <span class="material-icons">{{ showPass ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
       </div>
 
       @if (error()) {

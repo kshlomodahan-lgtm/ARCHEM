@@ -1,0 +1,310 @@
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="page-title">
+      <mat-icon>label</mat-icon>
+      <h1>תבניות מאפיינים</h1>
+    </div>
+    <button class="btn-new" (click)="openNew()">תבנית חדשה</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input class="search-input" type="text" placeholder="חיפוש לפי שם / תיאור..."
+             (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-box"><span class="spinner"></span> טוען...</div>
+  } @else if (error()) {
+    <div class="error-box">{{ error() }}</div>
+  } @else {
+    <div class="grid-outer">
+      <kendo-grid class="rd-grid"
+        [data]="{ data: pagedData, total: gridData.length }"
+        [skip]="skip" [pageSize]="pageSize"
+        [pageable]="{ buttonCount: 5, info: true, type: 'numeric', pageSizes: [10, 25, 50] }"
+        [sortable]="{ mode: 'single', allowUnsort: false }"
+        [sort]="sort"
+        [reorderable]="true" [resizable]="true"
+        scrollable="scrollable"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)">
+
+        <kendo-grid-column field="TemplateName" title="שם תבנית">
+          <ng-template kendoGridCellTemplate let-item>
+            <span class="name-bold">{{ item.TemplateName }}</span>
+            @if (item.IsMandatory) {
+              <span class="badge badge-mandatory">חובה</span>
+            }
+          </ng-template>
+        </kendo-grid-column>
+
+        <kendo-grid-column field="Description" title="תיאור">
+          <ng-template kendoGridCellTemplate let-item>
+            <span class="text-muted">{{ item.Description || '—' }}</span>
+          </ng-template>
+        </kendo-grid-column>
+
+        <kendo-grid-column field="IsComposite" title="סוג" [width]="110" [sortable]="false">
+          <ng-template kendoGridCellTemplate let-item>
+            <span class="badge" [class.badge-yes]="item.IsComposite" [class.badge-inactive]="!item.IsComposite">
+              {{ item.IsComposite ? 'מורכב' : 'פשוט' }}
+            </span>
+          </ng-template>
+        </kendo-grid-column>
+
+        <kendo-grid-column field="fieldCount" title="שדות" [width]="75">
+          <ng-template kendoGridCellTemplate let-item>
+            <span class="field-count">{{ item.fieldCount }}</span>
+          </ng-template>
+        </kendo-grid-column>
+
+        <kendo-grid-column field="IsActive" title="סטטוס" [width]="90" [sortable]="false">
+          <ng-template kendoGridCellTemplate let-item>
+            <span class="badge" [class.badge-active]="item.IsActive" [class.badge-inactive]="!item.IsActive">
+              {{ item.IsActive ? 'פעיל' : 'מושהה' }}
+            </span>
+          </ng-template>
+        </kendo-grid-column>
+
+        <kendo-grid-column title="" [width]="120" [sortable]="false" [resizable]="false" [columnMenu]="false">
+          <ng-template kendoGridCellTemplate let-item>
+            <div class="action-group">
+              <button class="btn-expand" (click)="openView(item)" title="הצג פרטים"><mat-icon>visibility</mat-icon></button>
+              <button class="btn-edit"   (click)="openEdit(item)" title="עריכה"><mat-icon>edit</mat-icon></button>
+              <button class="btn-delete" (click)="deactivate(item)" title="השבתה"><mat-icon>delete_outline</mat-icon></button>
+            </div>
+          </ng-template>
+        </kendo-grid-column>
+
+        <kendo-grid-messages
+          pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="רשומות"
+          columnMenuFilter="סנן" columnMenuSort="מיון" columnMenuColumns="עמודות"
+          columnMenuSortAscending="עולה" columnMenuSortDescending="יורד"
+          noRecords="לא נמצאו תבניות" loading="טוען..." />
+      </kendo-grid>
+    </div>
+  }
+</div>
+
+<!-- ── DIALOG ── -->
+@if (showDialog()) {
+  <kendo-dialog
+    [title]="editItem() ? (viewMode() ? 'פרטי תבנית' : 'עריכת תבנית') : 'תבנית חדשה'"
+    [width]="700" [minWidth]="500" (close)="closeDialog()">
+
+    <!-- כרטיסיות ניווט -->
+    <div class="dialog-tabs">
+      <button class="dtab" [class.active]="activeTab() === 'general'" (click)="activeTab.set('general')">פרטים כלליים</button>
+      <button class="dtab" [class.active]="activeTab() === 'fields'"  (click)="activeTab.set('fields')">שדות ({{ fieldsArray.length }})</button>
+    </div>
+
+    <form [formGroup]="form" class="rd-form">
+
+      <!-- ── כרטיסייה: פרטים כלליים ── -->
+      @if (activeTab() === 'general') {
+
+        <div class="form-row form-row-1">
+          <div class="form-group required">
+            <label class="form-label">שם תבנית</label>
+            <input class="form-input" formControlName="templateName" placeholder="לדוגמה: מפרט כשרות" />
+            @if (form.get('templateName')?.invalid && form.get('templateName')?.touched) {
+              <span class="form-err">שדה חובה</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-row form-row-1">
+          <div class="form-group">
+            <label class="form-label">תיאור</label>
+            <textarea class="form-input form-textarea" formControlName="description"
+                      rows="2" placeholder="תיאור קצר של המאפיין"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">סוג תבנית</label>
+            <div class="seg-ctrl">
+              <button type="button" class="seg-btn"
+                      [class.seg-on]="!!form.get('isComposite')?.value"
+                      (click)="!viewMode() && form.get('isComposite')?.setValue(true)">
+                מורכב (מספר שדות)
+              </button>
+              <button type="button" class="seg-btn"
+                      [class.seg-off]="!form.get('isComposite')?.value"
+                      (click)="!viewMode() && form.get('isComposite')?.setValue(false)">
+                פשוט (שדה אחד)
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">חובה לקישור</label>
+            <div class="seg-ctrl">
+              <button type="button" class="seg-btn"
+                      [class.seg-on]="!!form.get('isMandatory')?.value"
+                      (click)="!viewMode() && form.get('isMandatory')?.setValue(true)">
+                ✓ חובה
+              </button>
+              <button type="button" class="seg-btn"
+                      [class.seg-off]="!form.get('isMandatory')?.value"
+                      (click)="!viewMode() && form.get('isMandatory')?.setValue(false)">
+                רשות
+              </button>
+            </div>
+          </div>
+        </div>
+
+        @if (editItem()) {
+          <div class="form-row form-row-1">
+            <div class="form-group">
+              <label class="form-label">סטטוס</label>
+              <div class="seg-ctrl">
+                <button type="button" class="seg-btn"
+                        [class.seg-on]="!!form.get('isActive')?.value"
+                        (click)="!viewMode() && form.get('isActive')?.setValue(true)">✓ פעיל</button>
+                <button type="button" class="seg-btn"
+                        [class.seg-off]="!form.get('isActive')?.value"
+                        (click)="!viewMode() && form.get('isActive')?.setValue(false)">✗ מושהה</button>
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- ── כרטיסייה: שדות ── -->
+      @if (activeTab() === 'fields') {
+        <div class="fields-tab">
+          @if (!viewMode()) {
+            <button type="button" class="btn-add-field" (click)="addField()">
+              <mat-icon>add</mat-icon> הוסף שדה
+            </button>
+          }
+
+          <div formArrayName="fields">
+            @for (fg of fieldsArray.controls; track $index; let i = $index) {
+              <div [formGroupName]="i" class="field-card">
+                <div class="field-card-header">
+                  <span class="field-idx">שדה {{ i + 1 }}</span>
+                  @if (!viewMode()) {
+                    <button type="button" class="btn-remove-field" (click)="removeField(i)" title="הסר שדה">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  }
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group required">
+                    <label class="form-label">שם שדה</label>
+                    <input class="form-input" formControlName="FieldName" placeholder="שם השדה" />
+                    @if ($any(fg).get('FieldName')?.invalid && $any(fg).get('FieldName')?.touched) {
+                      <span class="form-err">שדה חובה</span>
+                    }
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">סוג נתון</label>
+                    <select class="form-input form-select" formControlName="DataType">
+                      @for (dt of dataTypes; track dt.value) {
+                        <option [value]="dt.value">{{ dt.label }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row form-row-1">
+                  <div class="form-group">
+                    <label class="form-label">שדה חובה</label>
+                    <div class="seg-ctrl">
+                      <button type="button" class="seg-btn"
+                              [class.seg-on]="!!$any(fg).get('IsRequired')?.value"
+                              (click)="!viewMode() && $any(fg).get('IsRequired')?.setValue(true)">✓ כן</button>
+                      <button type="button" class="seg-btn"
+                              [class.seg-off]="!$any(fg).get('IsRequired')?.value"
+                              (click)="!viewMode() && $any(fg).get('IsRequired')?.setValue(false)">✗ לא</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ערכי רשימה -->
+                @if (isListType($any(fg))) {
+                  <div class="form-group">
+                    <label class="form-label">ערכי רשימה</label>
+                    <div class="options-list">
+                      @for (opt of $any(fg).get('options')?.value; track $index; let oi = $index) {
+                        <div class="option-chip">
+                          <span>{{ opt.OptionValue }}</span>
+                          @if (!viewMode()) {
+                            <button type="button" class="chip-remove" (click)="removeOption(i, oi)">×</button>
+                          }
+                        </div>
+                      }
+                    </div>
+                    @if (!viewMode()) {
+                      <div class="option-add-row">
+                        <input class="form-input option-input" type="text"
+                               placeholder="ערך חדש..."
+                               [(ngModel)]="newOptionInputs[i]"
+                               [ngModelOptions]="{standalone: true}"
+                               (keyup.enter)="addOption(i)" />
+                        <button type="button" class="btn-add-opt" (click)="addOption(i)">הוסף</button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- הגבלות מספר -->
+                @if ($any(fg).get('DataType')?.value === 'NUMBER') {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">ערך מינימלי</label>
+                      <input class="form-input" type="number" formControlName="MinValue" placeholder="ללא" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">ערך מקסימלי</label>
+                      <input class="form-input" type="number" formControlName="MaxValue" placeholder="ללא" />
+                    </div>
+                  </div>
+                }
+
+                <!-- אורך מקסימלי טקסט -->
+                @if ($any(fg).get('DataType')?.value === 'TEXT') {
+                  <div class="form-row form-row-1">
+                    <div class="form-group">
+                      <label class="form-label">אורך מקסימלי</label>
+                      <input class="form-input" type="number" formControlName="MaxLength" placeholder="ללא הגבלה" style="max-width:200px" />
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (fieldsArray.length === 0) {
+              <div class="no-fields">אין שדות מוגדרים. לחץ "הוסף שדה" להתחלה.</div>
+            }
+          </div>
+        </div>
+      }
+    </form>
+
+    @if (errorMsg) {
+      <div class="dialog-error">{{ errorMsg }}</div>
+    }
+
+    <kendo-dialog-actions>
+      <div class="dialog-footer">
+        @if (!viewMode()) {
+          <button class="btn-save" (click)="save()" [disabled]="saving()">
+            @if (saving()) { <span class="btn-spinner"></span> } @else { ✓ } שמור
+          </button>
+        }
+        @if (viewMode()) {
+          <button class="btn-save" (click)="switchToEdit()">✏ ערוך</button>
+        }
+        <button class="btn-cancel" (click)="closeDialog()">{{ viewMode() ? 'סגור' : 'ביטול' }}</button>
+      </div>
+    </kendo-dialog-actions>
+  </kendo-dialog>
+}

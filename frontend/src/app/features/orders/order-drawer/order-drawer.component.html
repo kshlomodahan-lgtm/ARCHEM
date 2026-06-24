@@ -33,11 +33,11 @@
         </span>
         <span class="dh-meta-item">
           <mat-icon>person</mat-icon>
-          {{ order.salesPerson }}
+          {{ order.customerRef || '—' }}
         </span>
         <span class="dh-meta-item">
           <mat-icon>domain</mat-icon>
-          {{ order.salesDomain }}
+          {{ order.salesDomainName }}
         </span>
         <span class="dh-meta-item">
           <mat-icon>account_balance_wallet</mat-icon>
@@ -98,11 +98,7 @@
         </div>
         <div class="dg-item">
           <span class="dg-label">תחום מכירה</span>
-          <span class="dg-value">{{ order.salesDomain }} ({{ order.salesDomainPrefix }})</span>
-        </div>
-        <div class="dg-item">
-          <span class="dg-label">איש מכירות</span>
-          <span class="dg-value">{{ order.salesPerson }}</span>
+          <span class="dg-value">{{ order.salesDomainName || '—' }}</span>
         </div>
         <div class="dg-item">
           <span class="dg-label">הפניית לקוח</span>

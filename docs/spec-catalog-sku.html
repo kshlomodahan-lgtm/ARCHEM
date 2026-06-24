@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>אפיון: ספק–לקוח, מק"ט, מאפיינים, מקטלג — ARCHEM</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg:          #ffffff;
+      --color-bg-alt:      #f8fafc;
+      --color-bg-new:      #eff6ff;
+      --color-bg-exist:    #f0fdf4;
+      --color-text:        #0f172a;
+      --color-text-muted:  #475569;
+      --color-border:      #cbd5e1;
+      --color-primary:     #1d4ed8;
+      --color-primary-dark:#1e3a8a;
+      --color-new:         #1d4ed8;
+      --color-exist:       #15803d;
+      --color-heading:     #0f172a;
+      --color-tag-new-bg:  #dbeafe;
+      --color-tag-new-fg:  #1e3a8a;
+      --color-tag-ex-bg:   #dcfce7;
+      --color-tag-ex-fg:   #14532d;
+      --color-focus:       #1d4ed8;
+      --radius:            8px;
+      --shadow:            0 1px 4px rgba(0,0,0,.12);
+    }
+
+    /* AAA: skip link */
+    .skip-link {
+      position: absolute; top: -100%; right: 0;
+      background: var(--color-primary); color: #fff;
+      padding: 10px 18px; font-weight: 700; z-index: 9999;
+      border-radius: 0 0 var(--radius) var(--radius);
+      text-decoration: none; font-size: 1rem;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* AAA: focus */
+    :focus-visible {
+      outline: 3px solid var(--color-focus);
+      outline-offset: 3px;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Noto Sans Hebrew', Arial, sans-serif;
+      font-size: 1rem; line-height: 1.7;
+      color: var(--color-text);
+      background: var(--color-bg);
+    }
+
+    /* ── Layout ── */
+    .page-wrap {
+      max-width: 1100px; margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Header ── */
+    .doc-header {
+      border-bottom: 3px solid var(--color-primary);
+      padding-bottom: 1.5rem; margin-bottom: 2rem;
+    }
+    .doc-header h1 {
+      font-size: 2rem; font-weight: 800;
+      color: var(--color-heading); line-height: 1.3;
+    }
+    .doc-header .subtitle {
+      color: var(--color-text-muted); font-size: .95rem; margin-top: .4rem;
+    }
+    .doc-meta {
+      display: flex; gap: 2rem; flex-wrap: wrap;
+      margin-top: 1rem; font-size: .85rem; color: var(--color-text-muted);
+    }
+    .doc-meta strong { color: var(--color-text); }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .toc h2 { font-size: 1rem; font-weight: 700; margin-bottom: .75rem; }
+    .toc ol { padding-right: 1.25rem; }
+    .toc li { margin-bottom: .3rem; }
+    .toc a { color: var(--color-primary); text-decoration: none; font-size: .9rem; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Sections ── */
+    section { margin-bottom: 3rem; }
+    section > h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--color-heading);
+      border-right: 5px solid var(--color-primary);
+      padding-right: .75rem; margin-bottom: 1.25rem;
+    }
+    h3 {
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--color-heading); margin: 1.5rem 0 .6rem;
+    }
+    h4 { font-size: .95rem; font-weight: 700; margin: 1rem 0 .4rem; }
+    p { margin-bottom: .75rem; }
+
+    /* ── Status Tags ── */
+    .tag {
+      display: inline-block;
+      padding: 2px 10px; border-radius: 99px;
+      font-size: .78rem; font-weight: 700;
+      vertical-align: middle; margin-inline-start: .4rem;
+    }
+    .tag-exist {
+      background: var(--color-tag-ex-bg);
+      color: var(--color-tag-ex-fg);
+      border: 1px solid #86efac;
+    }
+    .tag-new {
+      background: var(--color-tag-new-bg);
+      color: var(--color-tag-new-fg);
+      border: 1px solid #93c5fd;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex; gap: 1.5rem; align-items: center;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: .75rem 1rem; margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: .4rem; font-size: .87rem; }
+
+    /* ── Cards ── */
+    .card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      background: var(--color-bg);
+      box-shadow: var(--shadow);
+    }
+    .card.card-exist { border-right: 4px solid #22c55e; }
+    .card.card-new   { border-right: 4px solid #3b82f6; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; margin-bottom: 1.25rem; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: .875rem;
+    }
+    caption {
+      text-align: right; font-weight: 700;
+      padding: .5rem 0; color: var(--color-text);
+      font-size: .9rem;
+    }
+    th, td {
+      border: 1px solid var(--color-border);
+      padding: .55rem .9rem; text-align: right;
+    }
+    thead th {
+      background: #1e3a8a; color: #fff;
+      font-weight: 700; font-size: .82rem;
+    }
+    tbody tr:nth-child(even) { background: var(--color-bg-alt); }
+    tbody tr:hover { background: #eff6ff; }
+    .col-key  { font-family: 'Courier New', monospace; font-size: .82rem; color: #7c3aed; }
+    .col-type { font-size: .8rem; color: var(--color-text-muted); }
+
+    /* ── Flow Diagram ── */
+    .flow {
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: .85rem; line-height: 2;
+      overflow-x: auto;
+    }
+    .flow-node-exist {
+      display: inline-block;
+      background: var(--color-tag-ex-bg);
+      color: var(--color-tag-ex-fg);
+      border: 1px solid #86efac;
+      border-radius: 6px; padding: 1px 8px;
+      font-family: inherit;
+    }
+    .flow-node-new {
+      display: inline-block;
+      background: var(--color-tag-new-bg);
+      color: var(--color-tag-new-fg);
+      border: 1px solid #93c5fd;
+      border-radius: 6px; padding: 1px 8px;
+      font-family: inherit;
+    }
+    .flow-arrow { color: #64748b; }
+
+    /* ── Axioms ── */
+    .axiom-list { list-style: none; padding: 0; }
+    .axiom-list li {
+      display: flex; gap: .75rem; align-items: flex-start;
+      padding: .85rem 1rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      margin-bottom: .75rem;
+      background: var(--color-bg-alt);
+    }
+    .axiom-num {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: var(--color-primary);
+      color: #fff; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .82rem;
+    }
+
+    /* ── Screen Cards ── */
+    .screen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .screen-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      background: var(--color-bg);
+      box-shadow: var(--shadow);
+    }
+    .screen-card h4 { margin-top: 0; color: var(--color-primary-dark); }
+    .screen-card ul { padding-right: 1.2rem; font-size: .87rem; }
+    .screen-card li { margin-bottom: .3rem; }
+
+    /* ── Summary table ── */
+    .summary-table th { background: #1e3a8a; color: #fff; }
+    .status-exist { color: var(--color-exist); font-weight: 700; }
+    .status-new   { color: var(--color-new);   font-weight: 700; }
+
+    /* ── Alert box ── */
+    .alert {
+      border-radius: var(--radius);
+      padding: .85rem 1.1rem;
+      margin-bottom: 1.25rem;
+      border-right: 4px solid;
+      font-size: .9rem;
+    }
+    .alert-ai {
+      background: #faf5ff;
+      border-color: #7c3aed;
+      color: #3b0764;
+    }
+
+    /* ── Print ── */
+    @media print {
+      .skip-link, .toc { display: none; }
+      section { break-inside: avoid; }
+      body { font-size: .85rem; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .doc-header h1 { font-size: 1.4rem; }
+      section > h2 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">דלג לתוכן הראשי</a>
+
+<div class="page-wrap">
+
+  <!-- ── HEADER ── -->
+  <header class="doc-header" role="banner">
+    <h1>אפיון מערכת: ספק–לקוח, מק"ט, מאפיינים ומקטלג</h1>
+    <p class="subtitle">מסמך מלא — ארכיטקטורה, DB, זרימות ומסכים</p>
+    <div class="doc-meta" role="contentinfo">
+      <span><strong>פרויקט:</strong> ARCHEM</span>
+      <span><strong>תאריך:</strong> 24 יוני 2026</span>
+      <span><strong>גרסה:</strong> 1.0</span>
+      <span><strong>סטטוס:</strong> אפיון לאישור</span>
+    </div>
+  </header>
+
+  <!-- ── LEGEND ── -->
+  <div class="legend" role="note" aria-label="מקרא סטטוס רכיבים">
+    <strong>מקרא:</strong>
+    <div class="legend-item">
+      <span class="tag tag-exist" aria-hidden="true">קיים</span>
+      <span>רכיב שכבר קיים ב-DB / קוד</span>
+    </div>
+    <div class="legend-item">
+      <span class="tag tag-new" aria-hidden="true">חדש</span>
+      <span>רכיב חדש לפיתוח</span>
+    </div>
+  </div>
+
+  <!-- ── TOC ── -->
+  <nav class="toc" aria-label="תוכן עניינים">
+    <h2>תוכן עניינים</h2>
+    <ol>
+      <li><a href="#axioms">אקסיומות הבסיס</a></li>
+      <li><a href="#entities">ישויות ליבה</a></li>
+      <li><a href="#sku-flow">זרימת מק"ט — מהזמנה עד קטלוג</a></li>
+      <li><a href="#db-existing">DB קיים — טבלאות רלוונטיות</a></li>
+      <li><a href="#db-new">DB חדש — טבלאות לפיתוח</a></li>
+      <li><a href="#attributes">מאפיינים דינאמיים</a></li>
+      <li><a href="#cataloger">המקטלג + AI</a></li>
+      <li><a href="#screens">מסכים</a></li>
+      <li><a href="#summary">סיכום — קיים לעומת חדש</a></li>
+    </ol>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- ══ 1. AXIOMS ══ -->
+    <section id="axioms" aria-labelledby="axioms-heading">
+      <h2 id="axioms-heading">1. אקסיומות הבסיס</h2>
+      <ul class="axiom-list" role="list">
+        <li>
+          <div class="axiom-num" aria-label="אקסיומה 1">1</div>
+          <div>
+            <strong>מק"ט ספק הוא המוביל.</strong>
+            מק"ט ספק (SupplierSKU) הוא ה-source of truth של כל פריט במערכת.
+            כל זיהוי, קטלוג, איחוד ותהליך נגזרים ממנו.
+          </div>
+        </li>
+        <li>
+          <div class="axiom-num" aria-label="אקסיומה 2">2</div>
+          <div>
+            <strong>יחס רבים-לאחד בין מק"טי לקוח למק"ט ספק.</strong>
+            לאותו SupplierSKU יכולים להיות מק"טי לקוח שונים אצל לקוחות שונים —
+            כל לקוח מגדיר את הפריט לפי מערכת המינוח שלו.
+          </div>
+        </li>
+        <li>
+          <div class="axiom-num" aria-label="אקסיומה 3">3</div>
+          <div>
+            <strong>מק"ט ספק פשוט — כל השונות בצד הלקוח.</strong>
+            הספק אינו יודע ואינו אמור לדעת על לקוחות ומאפיינים שלהם.
+            כל וריאציה (שם, יחידת מידה, כשרות, לוגו, אריזה) שייכת לקשר הספציפי Supplier↔Customer.
+          </div>
+        </li>
+        <li>
+          <div class="axiom-num" aria-label="אקסיומה 4">4</div>
+          <div>
+            <strong>המקטלג = Human in the Loop נגד כפילויות.</strong>
+            המקטלג עוצר כל מק"ט ספק חדש/לא מוכר, מחפש זהויות בעזרת AI,
+            ומחליט: לקשר לקיים — או ליצור חדש. הוא לא מחליט על מאפיינים; הוא מחליט על זהות.
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ══ 2. ENTITIES ══ -->
+    <section id="entities" aria-labelledby="entities-heading">
+      <h2 id="entities-heading">2. ישויות ליבה</h2>
+
+      <div class="card card-exist">
+        <h3>
+          ספק (Supplier)
+          <span class="tag tag-exist">קיים — tblSuppliers</span>
+        </h3>
+        <p>בעל המק"ט המוביל. ייצר או שולח סחורה. מזוהה על-ידי <code>SupplierID</code>.</p>
+      </div>
+
+      <div class="card card-exist">
+        <h3>
+          לקוח (Customer)
+          <span class="tag tag-exist">קיים — tblCustomers</span>
+        </h3>
+        <p>מקבל הסחורה. לכל לקוח מינוח מק"ט משלו ומאפיינים ייחודיים. מזוהה על-ידי <code>CustomerID</code>.</p>
+      </div>
+
+      <div class="card card-exist">
+        <h3>
+          פריט קטלוג (Item)
+          <span class="tag tag-exist">קיים — tblItems</span>
+        </h3>
+        <p>
+          רשומה גנרית המתארת פריט ספציפי ללא קשר לספק או לקוח.
+          נוצרת על-ידי המקטלג בעת אישור מק"ט ספק חדש.
+          <br />שדות מרכזיים: <code>ItemCode, NameEN, NameHE, DefaultSupplierID, UOM_ID</code>.
+        </p>
+      </div>
+
+      <div class="card card-exist">
+        <h3>
+          קישור ספק–פריט (SupplierSKU)
+          <span class="tag tag-exist">קיים — tblItemSupplierLinks</span>
+        </h3>
+        <p>
+          מקשר בין <code>tblItems</code> ל-<code>tblSuppliers</code> ומגדיר את מק"ט הספק (<code>SupplierPartNo</code>).
+          ספק אחד יכול לספק מספר פריטים; פריט אחד יכול להגיע ממספר ספקים.
+          <code>IsPrimary</code> מסמן את הספק הראשי.
+        </p>
+      </div>
+
+      <div class="card card-exist">
+        <h3>
+          קישור מק"ט ספק ↔ מק"ט לקוח
+          <span class="tag tag-exist">קיים — tblItemLinks</span>
+        </h3>
+        <p>
+          הלב של מנגנון המיפוי. כל שורה מייצגת קשר: <em>ספק X עם מק"ט Y ← לקוח Z עם מק"ט W</em>.
+        </p>
+        <ul style="padding-right:1.2rem; font-size:.87rem;">
+          <li><code>IsTempSKU=1</code> — מק"ט זמני, ממתין לאישור המקטלג</li>
+          <li><code>IsGlobalSKU</code> — מק"ט משותף/גלובלי</li>
+          <li><code>CustomerSKUDesc</code> — תיאור הפריט בשפת הלקוח</li>
+          <li><code>ResponsibleUserID</code> — אחראי מטפל</li>
+        </ul>
+      </div>
+
+      <div class="card card-exist">
+        <h3>
+          שורת הזמנה
+          <span class="tag tag-exist">קיים — tblOrderLines</span>
+        </h3>
+        <p>
+          מכילה <code>SupplierSKU</code>, <code>CustomerSKU</code> ו-<code>ItemLinkID</code>.
+          רגלי <code>AutoCreateSupplierSKU</code> / <code>AutoCreateCustomerSKU</code>
+          מפעילים יצירת מק"ט זמני אוטומטית כשמק"ט לא מוכר.
+        </p>
+      </div>
+    </section>
+
+    <!-- ══ 3. SKU FLOW ══ -->
+    <section id="sku-flow" aria-labelledby="sku-flow-heading">
+      <h2 id="sku-flow-heading">3. זרימת מק"ט — מהזמנה עד קטלוג</h2>
+
+      <div class="flow" role="img" aria-label="תרשים זרימת מק&quot;ט מהזמנה עד קטלוג">
+<span class="flow-node-exist">שורת הזמנה נכנסת</span>
+<br />
+SupplierSKU ידוע? <span class="flow-arrow">──────</span> כן <span class="flow-arrow">──→</span> <span class="flow-node-exist">tblItemLinks (IsTempSKU=0)</span> <span class="flow-arrow">──→</span> ItemLinkID מאוכלס
+<br />
+        <span class="flow-arrow">│</span>
+<br />
+        לא
+<br />
+        <span class="flow-arrow">↓</span>
+<br />
+AutoCreate=1 <span class="flow-arrow">──→</span> <span class="flow-node-exist">tblItemLinks (IsTempSKU=1)</span> <span class="flow-arrow">──→</span> <span class="flow-node-new">tblCatalogQueue (PENDING)</span>
+<br />
+<span class="flow-arrow">                                                                   ↓</span>
+<br />
+<span class="flow-arrow">                                              </span><span class="flow-node-new">AI סורק tblItems — מציע דמיון (%)</span>
+<br />
+<span class="flow-arrow">                                                                   ↓</span>
+<br />
+<span class="flow-arrow">                                              </span>מקטלג-אנוש בוחן את ההצעות
+<br />
+<span class="flow-arrow">                                                      ╱                    ╲</span>
+<br />
+<span class="flow-arrow">                                      </span>פריט קיים?                    פריט חדש?
+<br />
+<span class="flow-arrow">                                           ↓                              ↓</span>
+<br />
+<span class="flow-arrow">                               </span><span class="flow-node-exist">LINK: tblItemSupplierLinks</span>    <span class="flow-node-new">CREATE: tblItems חדש</span>
+<br />
+<span class="flow-arrow">                                           ↓                              ↓</span>
+<br />
+<span class="flow-arrow">                               </span><span class="flow-node-exist">IsTempSKU → 0</span>      <span class="flow-arrow">          </span><span class="flow-node-new">tblItemSupplierLinks חדש + IsTempSKU → 0</span>
+<br />
+<span class="flow-arrow">                                           ↓</span>
+<br />
+<span class="flow-arrow">                               </span><span class="flow-node-new">מקטלג מקשר מאפיינים (tblItemLinkAttributes)</span>
+<br />
+<span class="flow-arrow">                                           ↓</span>
+<br />
+<span class="flow-arrow">                               </span><span class="flow-node-new">tblCatalogQueue: Decision=LINKED/CREATED</span>
+      </div>
+    </section>
+
+    <!-- ══ 4. DB EXISTING ══ -->
+    <section id="db-existing" aria-labelledby="db-exist-heading">
+      <h2 id="db-exist-heading">4. DB קיים — טבלאות רלוונטיות</h2>
+
+      <h3>
+        tblItems
+        <span class="tag tag-exist">קיים</span>
+      </h3>
+      <div class="table-wrap">
+        <table aria-describedby="tblItems-desc">
+          <caption id="tblItems-desc">טבלת פריטי קטלוג ראשיים</caption>
+          <thead>
+            <tr>
+              <th scope="col">עמודה</th>
+              <th scope="col">סוג</th>
+              <th scope="col">תיאור</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">ItemID</td><td class="col-type">INT PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">ItemCode</td><td class="col-type">NVARCHAR(20)</td><td>קוד פריט פנימי</td></tr>
+            <tr><td class="col-key">NameEN / NameHE</td><td class="col-type">NVARCHAR(100)</td><td>שם הפריט אנגלית / עברית</td></tr>
+            <tr><td class="col-key">DefaultSupplierID</td><td class="col-type">INT FK</td><td>ספק ראשי</td></tr>
+            <tr><td class="col-key">UOM_ID</td><td class="col-type">INT FK</td><td>יחידת מידה בסיסית</td></tr>
+            <tr><td class="col-key">UnitPrice / UnitPriceCustomer</td><td class="col-type">DECIMAL</td><td>מחיר ספק / לקוח</td></tr>
+            <tr><td class="col-key">CustomsCode</td><td class="col-type">NVARCHAR(20)</td><td>קוד מכס</td></tr>
+            <tr><td class="col-key">IsActive</td><td class="col-type">BIT</td><td>פעיל/מושבת</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblItemSupplierLinks
+        <span class="tag tag-exist">קיים</span>
+      </h3>
+      <div class="table-wrap">
+        <table aria-describedby="tblISL-desc">
+          <caption id="tblISL-desc">קישור פריט ↔ ספק עם מק"ט ספק</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">ItemSupplierID</td><td class="col-type">INT PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">ItemID</td><td class="col-type">INT FK</td><td>→ tblItems</td></tr>
+            <tr><td class="col-key">SupplierID</td><td class="col-type">INT FK</td><td>→ tblSuppliers</td></tr>
+            <tr><td class="col-key">SupplierPartNo</td><td class="col-type">NVARCHAR(30)</td><td><strong>מק"ט ספק — המוביל</strong></td></tr>
+            <tr><td class="col-key">UnitPrice / CurrencyID</td><td class="col-type">DECIMAL / SMALLINT</td><td>מחיר ומטבע מהספק</td></tr>
+            <tr><td class="col-key">IsPrimary</td><td class="col-type">BIT</td><td>ספק ראשי לפריט זה</td></tr>
+            <tr><td class="col-key">IsActive</td><td class="col-type">BIT</td><td>פעיל</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblItemLinks
+        <span class="tag tag-exist">קיים</span>
+      </h3>
+      <div class="table-wrap">
+        <table aria-describedby="tblIL-desc">
+          <caption id="tblIL-desc">מיפוי מק"ט ספק ↔ מק"ט לקוח — הלב של המערכת</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">ItemLinkID</td><td class="col-type">BIGINT PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">SupplierID</td><td class="col-type">INT FK</td><td>→ tblSuppliers</td></tr>
+            <tr><td class="col-key">SupplierSKU</td><td class="col-type">NVARCHAR(25)</td><td><strong>מק"ט ספק — ציר המיפוי</strong></td></tr>
+            <tr><td class="col-key">CustomerID</td><td class="col-type">INT FK</td><td>→ tblCustomers</td></tr>
+            <tr><td class="col-key">CustomerSKU</td><td class="col-type">NVARCHAR(25)</td><td>מק"ט לקוח (ייחודי לצמד Supplier+Customer)</td></tr>
+            <tr><td class="col-key">CustomerSKUDesc</td><td class="col-type">NVARCHAR(100)</td><td>תיאור בשפת הלקוח</td></tr>
+            <tr><td class="col-key">UOMID</td><td class="col-type">INT FK</td><td>יחידת מידה כפי שהלקוח רואה</td></tr>
+            <tr><td class="col-key">IsTempSKU</td><td class="col-type">BIT</td><td><strong>1 = ממתין לאישור מקטלג</strong></td></tr>
+            <tr><td class="col-key">IsGlobalSKU</td><td class="col-type">BIT</td><td>מק"ט גלובלי / משותף</td></tr>
+            <tr><td class="col-key">ResponsibleUserID</td><td class="col-type">INT FK</td><td>אחראי מטפל</td></tr>
+            <tr><td class="col-key">IsActive</td><td class="col-type">BIT</td><td>פעיל</td></tr>
+            <tr><td class="col-key">CreatedAt / UpdatedAt</td><td class="col-type">DATETIME2</td><td>Audit</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblOrderLines (שדות רלוונטיים)
+        <span class="tag tag-exist">קיים</span>
+      </h3>
+      <div class="table-wrap">
+        <table aria-describedby="tblOL-desc">
+          <caption id="tblOL-desc">שדות רלוונטיים לניהול מק"ט בשורות הזמנה</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">SupplierSKU</td><td class="col-type">NVARCHAR(25)</td><td>מק"ט ספק בפועל בשורה זו</td></tr>
+            <tr><td class="col-key">CustomerSKU</td><td class="col-type">NVARCHAR(25)</td><td>מק"ט לקוח בפועל בשורה זו</td></tr>
+            <tr><td class="col-key">ItemLinkID</td><td class="col-type">BIGINT FK</td><td>→ tblItemLinks (ריק = טרם קושר)</td></tr>
+            <tr><td class="col-key">AutoCreateSupplierSKU</td><td class="col-type">BIT</td><td>צור מק"ט ספק זמני אוטומטית</td></tr>
+            <tr><td class="col-key">AutoCreateCustomerSKU</td><td class="col-type">BIT</td><td>צור מק"ט לקוח זמני אוטומטית</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblSupplierCustomerPSNs
+        <span class="tag tag-exist">קיים — מדור קודם</span>
+      </h3>
+      <p>
+        טבלה ממערכת Magic XPA הישנה. מכילה מבנה דומה ל-<code>tblItemLinks</code> עם שדות boolean
+        לכשרות, שטיפה, לוגו, מסורת וכד'. <strong>לא בשימוש פעיל בארכיטקטורה החדשה</strong> —
+        פונקציונליות זו תועבר למערכת המאפיינים הדינאמית.
+      </p>
+    </section>
+
+    <!-- ══ 5. DB NEW ══ -->
+    <section id="db-new" aria-labelledby="db-new-heading">
+      <h2 id="db-new-heading">5. DB חדש — טבלאות לפיתוח</h2>
+
+      <h3>
+        tblAttributeTemplates
+        <span class="tag tag-new">חדש</span>
+      </h3>
+      <p>תבניות מאפיין גלובליות — ADMIN יוצר, כל תבנית ניתנת לקישור לכל מק"ט.</p>
+      <div class="table-wrap">
+        <table aria-describedby="tblAT-desc">
+          <caption id="tblAT-desc">תבניות מאפיינים גלובליות</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">AttributeTemplateID</td><td class="col-type">INT IDENTITY PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">TemplateName</td><td class="col-type">NVARCHAR(100) NOT NULL</td><td>שם התבנית — "מפרט כשרות"</td></tr>
+            <tr><td class="col-key">Description</td><td class="col-type">NVARCHAR(500)</td><td>תיאור חופשי</td></tr>
+            <tr><td class="col-key">IsComposite</td><td class="col-type">BIT DEFAULT 0</td><td>0=שדה בודד | 1=קבוצת שדות</td></tr>
+            <tr><td class="col-key">IsMandatory</td><td class="col-type">BIT DEFAULT 0</td><td>חובה לקשר בעת אישור מק"ט</td></tr>
+            <tr><td class="col-key">IsActive</td><td class="col-type">BIT DEFAULT 1</td><td>פעיל</td></tr>
+            <tr><td class="col-key">CreatedByUserID</td><td class="col-type">INT FK</td><td>יוצר</td></tr>
+            <tr><td class="col-key">CreatedAt / UpdatedAt</td><td class="col-type">DATETIME2</td><td>Audit</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblAttributeFields
+        <span class="tag tag-new">חדש</span>
+      </h3>
+      <p>שדות בתוך כל תבנית. לתבנית IsComposite=false יש שדה אחד בדיוק.</p>
+      <div class="table-wrap">
+        <table aria-describedby="tblAF-desc">
+          <caption id="tblAF-desc">שדות של תבניות מאפיינים</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">AttributeFieldID</td><td class="col-type">INT IDENTITY PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">AttributeTemplateID</td><td class="col-type">INT FK NOT NULL</td><td>→ tblAttributeTemplates</td></tr>
+            <tr><td class="col-key">FieldName</td><td class="col-type">NVARCHAR(100) NOT NULL</td><td>"סוג כשרות" / "צבע רקע"</td></tr>
+            <tr><td class="col-key">DataType</td><td class="col-type">NVARCHAR(20) NOT NULL</td><td>TEXT | NUMBER | BOOL | DATE | LIST | MULTILIST</td></tr>
+            <tr><td class="col-key">IsRequired</td><td class="col-type">BIT DEFAULT 0</td><td>חובה למלא שדה זה</td></tr>
+            <tr><td class="col-key">DefaultValue</td><td class="col-type">NVARCHAR(200)</td><td>ערך ברירת מחדל</td></tr>
+            <tr><td class="col-key">MinValue / MaxValue</td><td class="col-type">DECIMAL</td><td>לסוג NUMBER — טווח חוקי</td></tr>
+            <tr><td class="col-key">MaxLength</td><td class="col-type">INT</td><td>לסוג TEXT — אורך מקסימלי</td></tr>
+            <tr><td class="col-key">DisplayOrder</td><td class="col-type">TINYINT DEFAULT 0</td><td>סדר הצגה ב-UI</td></tr>
+            <tr><td class="col-key">IsActive</td><td class="col-type">BIT DEFAULT 1</td><td>פעיל</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblAttributeFieldOptions
+        <span class="tag tag-new">חדש</span>
+      </h3>
+      <p>ערכי dropdown לשדות מסוג LIST / MULTILIST.</p>
+      <div class="table-wrap">
+        <table aria-describedby="tblAFO-desc">
+          <caption id="tblAFO-desc">אפשרויות עבור שדות LIST</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">OptionID</td><td class="col-type">INT IDENTITY PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">AttributeFieldID</td><td class="col-type">INT FK NOT NULL</td><td>→ tblAttributeFields</td></tr>
+            <tr><td class="col-key">OptionValue</td><td class="col-type">NVARCHAR(100) NOT NULL</td><td>"בד"צ" / "מהדרין" / "רגיל"</td></tr>
+            <tr><td class="col-key">DisplayOrder</td><td class="col-type">TINYINT DEFAULT 0</td><td>סדר הצגה</td></tr>
+            <tr><td class="col-key">IsActive</td><td class="col-type">BIT DEFAULT 1</td><td>פעיל</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblItemLinkAttributes
+        <span class="tag tag-new">חדש</span>
+      </h3>
+      <p>קישור תבנית מאפיין ← מק"ט לקוח ספציפי (נוצר על-ידי המקטלג).</p>
+      <div class="table-wrap">
+        <table aria-describedby="tblILA-desc">
+          <caption id="tblILA-desc">קישור מאפיינים למק"ט לקוח</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">ItemLinkAttrID</td><td class="col-type">BIGINT IDENTITY PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">ItemLinkID</td><td class="col-type">BIGINT FK NOT NULL</td><td>→ tblItemLinks</td></tr>
+            <tr><td class="col-key">AttributeTemplateID</td><td class="col-type">INT FK NOT NULL</td><td>→ tblAttributeTemplates</td></tr>
+            <tr><td class="col-key">CreatedByUserID</td><td class="col-type">INT FK</td><td>המקטלג שקישר</td></tr>
+            <tr><td class="col-key">CreatedAt</td><td class="col-type">DATETIME2</td><td>Audit</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblItemLinkAttributeValues
+        <span class="tag tag-new">חדש</span>
+      </h3>
+      <p>ערכי שדות בפועל לכל קישור מאפיין. עמודת הערך מתאימה ל-DataType של השדה.</p>
+      <div class="table-wrap">
+        <table aria-describedby="tblILAV-desc">
+          <caption id="tblILAV-desc">ערכי שדות מאפיינים בפועל</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">ValueID</td><td class="col-type">BIGINT IDENTITY PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">ItemLinkAttrID</td><td class="col-type">BIGINT FK NOT NULL</td><td>→ tblItemLinkAttributes</td></tr>
+            <tr><td class="col-key">AttributeFieldID</td><td class="col-type">INT FK NOT NULL</td><td>→ tblAttributeFields</td></tr>
+            <tr><td class="col-key">TextValue</td><td class="col-type">NVARCHAR(1000)</td><td>לסוג TEXT</td></tr>
+            <tr><td class="col-key">NumberValue</td><td class="col-type">DECIMAL(18,4)</td><td>לסוג NUMBER</td></tr>
+            <tr><td class="col-key">BoolValue</td><td class="col-type">BIT</td><td>לסוג BOOL</td></tr>
+            <tr><td class="col-key">DateValue</td><td class="col-type">DATE</td><td>לסוג DATE</td></tr>
+            <tr><td class="col-key">OptionID</td><td class="col-type">INT FK</td><td>לסוג LIST → tblAttributeFieldOptions</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>
+        tblCatalogQueue
+        <span class="tag tag-new">חדש</span>
+      </h3>
+      <p>תור עבודה של המקטלג — מעקב אחר מצב כל פריט ממתין + תוצאות AI.</p>
+      <div class="table-wrap">
+        <table aria-describedby="tblCQ-desc">
+          <caption id="tblCQ-desc">תור עבודה של המקטלג</caption>
+          <thead>
+            <tr><th scope="col">עמודה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">QueueID</td><td class="col-type">BIGINT IDENTITY PK</td><td>מזהה ראשי</td></tr>
+            <tr><td class="col-key">ItemLinkID</td><td class="col-type">BIGINT FK NOT NULL</td><td>→ tblItemLinks (הפריט הממתין)</td></tr>
+            <tr><td class="col-key">AIStatus</td><td class="col-type">NVARCHAR(20)</td><td>PENDING | PROCESSING | DONE | FAILED</td></tr>
+            <tr><td class="col-key">AISuggestions</td><td class="col-type">NVARCHAR(MAX)</td><td>JSON: [{ItemID, score, reason, SupplierSKU}]</td></tr>
+            <tr><td class="col-key">AssignedToUserID</td><td class="col-type">INT FK</td><td>מקטלג שהוקצה</td></tr>
+            <tr><td class="col-key">Decision</td><td class="col-type">NVARCHAR(10)</td><td>LINKED | CREATED | SKIPPED</td></tr>
+            <tr><td class="col-key">ResultItemID</td><td class="col-type">INT FK</td><td>→ tblItems (הפריט שנוצר/קושר)</td></tr>
+            <tr><td class="col-key">ProcessedAt</td><td class="col-type">DATETIME2</td><td>מתי טופל</td></tr>
+            <tr><td class="col-key">CreatedAt</td><td class="col-type">DATETIME2</td><td>מתי נוצרה הרשומה</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ 6. ATTRIBUTES ══ -->
+    <section id="attributes" aria-labelledby="attr-heading">
+      <h2 id="attr-heading">6. מאפיינים דינאמיים — עקרונות</h2>
+
+      <div class="card card-new">
+        <h3>סוגי שדות נתמכים</h3>
+        <div class="table-wrap">
+          <table aria-describedby="dt-desc">
+            <caption id="dt-desc">DataType — סוגי שדות מאפיין</caption>
+            <thead>
+              <tr><th scope="col">DataType</th><th scope="col">UI Component</th><th scope="col">דוגמה</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="col-key">TEXT</td><td>TextBox</td><td>שם לוגו, הערה</td></tr>
+              <tr><td class="col-key">NUMBER</td><td>NumericTextBox (Min/Max)</td><td>עובי דופן (מ"מ), כמות מינימלית</td></tr>
+              <tr><td class="col-key">BOOL</td><td>Seg-Ctrl (כן/לא)</td><td>כולל הטבעת לוגו, דורש שטיפה</td></tr>
+              <tr><td class="col-key">DATE</td><td>DatePicker</td><td>תוקף כשרות</td></tr>
+              <tr><td class="col-key">LIST</td><td>DropDownList</td><td>סוג כשרות: בד"צ / מהדרין / רגיל</td></tr>
+              <tr><td class="col-key">MULTILIST</td><td>MultiSelect</td><td>אישורים: FDA + EU + CE</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card card-new">
+        <h3>דוגמת תבנית מורכבת — "מפרט כשרות"</h3>
+        <div class="table-wrap">
+          <table aria-describedby="ex-kosher-desc">
+            <caption id="ex-kosher-desc">דוגמה: תבנית IsComposite=true עם 3 שדות</caption>
+            <thead>
+              <tr><th scope="col">שדה</th><th scope="col">DataType</th><th scope="col">ערכי LIST</th><th scope="col">חובה</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>סוג כשרות</td><td class="col-type">LIST</td><td>בד"צ / מהדרין / רגיל / ללא</td><td>כן</td></tr>
+              <tr><td>תוקף כשרות</td><td class="col-type">DATE</td><td>—</td><td>לא</td></tr>
+              <tr><td>צריך חידוש שנתי</td><td class="col-type">BOOL</td><td>—</td><td>לא</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card card-new">
+        <h3>דוגמת תבנית פשוטה — "הטבעת לוגו"</h3>
+        <p>
+          IsComposite=<strong>false</strong>, שדה יחיד: "כולל הטבעת לוגו לקוח" → DataType=<strong>BOOL</strong>.
+          <br />קישור: <code>tblItemLinkAttributes</code> שורה אחת, ערך: <code>tblItemLinkAttributeValues.BoolValue = 1</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- ══ 7. CATALOGER ══ -->
+    <section id="cataloger" aria-labelledby="cat-heading">
+      <h2 id="cat-heading">7. המקטלג + AI</h2>
+
+      <div class="alert alert-ai" role="note" aria-label="הערה בנושא AI">
+        <strong>AI Component:</strong> קונקטור AI <code>742aef38</code> (מוגדר ב-SQUADFLOW תחת ARCHEM).
+        מופעל אוטומטית עם פתיחת כל פריט ממתין בתור. מציע מועמדים עם ציון דמיון.
+        <strong>לא מחליט לבד — מציע בלבד.</strong> ההחלטה תמיד של המקטלג-האנוש.
+      </div>
+
+      <h3>תפקיד המקטלג</h3>
+      <ul style="padding-right:1.4rem; margin-bottom:1rem;">
+        <li>עוצר כל SupplierSKU חדש/לא מוכר (<code>IsTempSKU=1</code>)</li>
+        <li>בוחן הצעות AI לדמיון עם קטלוג קיים</li>
+        <li>מחליט: <strong>LINK</strong> (קשר לפריט קיים) | <strong>CREATE</strong> (פריט חדש)</li>
+        <li>מקשר מאפיינים רלוונטיים למק"ט הלקוח</li>
+        <li>מממש <code>IsTempSKU → 0</code> ומסגר את הרשומה בתור</li>
+      </ul>
+
+      <h3>ה-AI מחפש לפי</h3>
+      <ul style="padding-right:1.4rem; margin-bottom:1rem;">
+        <li><strong>שם סמנטי</strong> — "בקבוק זכוכית ליין 500 מ"ל" ↔ "GLASS BOTTLE WINE 0.5L"</li>
+        <li><strong>תיאור CustomerSKUDesc</strong> — חיפוש fuzzy בתיאורים קיימים</li>
+        <li><strong>SupplierSKU pattern</strong> — דמיון בין קודי ספק</li>
+        <li><strong>מאפיינים</strong> (כשקיימים) — חיפוש פריטים עם מאפיינים חופפים</li>
+      </ul>
+
+      <h3>Output AI</h3>
+      <div class="table-wrap">
+        <table aria-describedby="ai-out-desc">
+          <caption id="ai-out-desc">פורמט תוצאות AI ב-tblCatalogQueue.AISuggestions (JSON)</caption>
+          <thead>
+            <tr><th scope="col">שדה</th><th scope="col">סוג</th><th scope="col">תיאור</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-key">ItemID</td><td class="col-type">INT</td><td>מזהה הפריט המוצע</td></tr>
+            <tr><td class="col-key">SupplierSKU</td><td class="col-type">STRING</td><td>מק"ט ספק של הפריט המוצע</td></tr>
+            <tr><td class="col-key">ItemName</td><td class="col-type">STRING</td><td>שם הפריט המוצע</td></tr>
+            <tr><td class="col-key">score</td><td class="col-type">FLOAT 0–1</td><td>ציון דמיון (0.85 = 85%)</td></tr>
+            <tr><td class="col-key">reason</td><td class="col-type">STRING</td><td>הסבר: "שם זהה + ספק זהה + UOM זהה"</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ 8. SCREENS ══ -->
+    <section id="screens" aria-labelledby="screens-heading">
+      <h2 id="screens-heading">8. מסכים</h2>
+
+      <div class="screen-grid">
+
+        <article class="screen-card" aria-label="מסך ניהול תבניות מאפיין">
+          <h4>ניהול תבניות מאפיין <span class="tag tag-new">חדש</span></h4>
+          <p><strong>מיועד ל:</strong> ADMIN</p>
+          <ul>
+            <li>רשימת כל התבניות (Kendo Grid)</li>
+            <li>כפתור "תבנית חדשה+" → Dialog sidebar-nav</li>
+            <li>כרטיסיות: פרטים כלליים | שדות | אפשרויות LIST</li>
+            <li>Sub-grid של שדות לכל תבנית</li>
+            <li>IsMandatory — seg-ctrl (כן/לא)</li>
+            <li>DataType — dropdown מ-6 סוגים</li>
+          </ul>
+        </article>
+
+        <article class="screen-card" aria-label="מסך תור המקטלג">
+          <h4>תור המקטלג <span class="tag tag-new">חדש</span></h4>
+          <p><strong>מיועד ל:</strong> CATALOGER ROLE</p>
+          <ul>
+            <li>פאנל שמאלי: רשימת ממתינים (IsTempSKU=1)</li>
+            <li>פאנל ימני: פרטי פריט + AI suggestions</li>
+            <li>ציוני דמיון עם הסבר לכל מועמד</li>
+            <li>כפתורי החלטה: [🔗 קשר לקיים] / [✓ צור פריט חדש]</li>
+            <li>פאנל מאפיינים: הוסף תבנית + מלא ערכים</li>
+            <li>Mandatory templates מסומנות ⚠ ונדרשות לפני שמירה</li>
+          </ul>
+        </article>
+
+        <article class="screen-card" aria-label="כרטיס מק&quot;ט מאושר">
+          <h4>כרטיס מק"ט מאושר <span class="tag tag-new">חדש</span></h4>
+          <p><strong>מיועד ל:</strong> כל משתמש</p>
+          <ul>
+            <li>פרטי tblItemLinks (SupplierSKU / CustomerSKU / UOM)</li>
+            <li>פרטי tblItems המקושר (ItemCode, Name)</li>
+            <li>כל המאפיינים המקושרים לפי תבניות</li>
+            <li>היסטוריית שינויים (DataTracker)</li>
+            <li>כפתור עריכת מאפיינים (למקטלג)</li>
+          </ul>
+        </article>
+
+        <article class="screen-card" aria-label="מסך קטלוג ראשי">
+          <h4>קטלוג ראשי — tblItems <span class="tag tag-exist">קיים (חלקי)</span></h4>
+          <p><strong>מיועד ל:</strong> כל משתמש</p>
+          <ul>
+            <li>חיפוש לפי ItemCode / Name / SupplierSKU</li>
+            <li>הצגת כל מיפויי הלקוחות לפריט</li>
+            <li>קישור לכרטיס פריט מורחב</li>
+            <li>Filter: פריטים ממתינים / מאושרים / כולם</li>
+          </ul>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ══ 9. SUMMARY ══ -->
+    <section id="summary" aria-labelledby="summary-heading">
+      <h2 id="summary-heading">9. סיכום — קיים לעומת חדש</h2>
+
+      <div class="table-wrap">
+        <table class="summary-table" aria-describedby="summary-desc">
+          <caption id="summary-desc">טבלת סיכום — מה קיים ומה לבנות</caption>
+          <thead>
+            <tr>
+              <th scope="col">רכיב</th>
+              <th scope="col">טבלה / קובץ</th>
+              <th scope="col">סטטוס</th>
+              <th scope="col">הערה</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>ספקים</td><td class="col-key">tblSuppliers</td><td class="status-exist">✅ קיים</td><td>—</td></tr>
+            <tr><td>לקוחות</td><td class="col-key">tblCustomers</td><td class="status-exist">✅ קיים</td><td>—</td></tr>
+            <tr><td>קטלוג פריטים</td><td class="col-key">tblItems</td><td class="status-exist">✅ קיים</td><td>—</td></tr>
+            <tr><td>מק"ט ספק</td><td class="col-key">tblItemSupplierLinks</td><td class="status-exist">✅ קיים</td><td>SupplierPartNo = SupplierSKU</td></tr>
+            <tr><td>מיפוי ספק↔לקוח</td><td class="col-key">tblItemLinks</td><td class="status-exist">✅ קיים</td><td>כולל IsTempSKU</td></tr>
+            <tr><td>רגלי AutoCreate</td><td class="col-key">tblOrderLines</td><td class="status-exist">✅ קיים</td><td>AutoCreateSupplierSKU/CustomerSKU</td></tr>
+            <tr><td>PSN ישן</td><td class="col-key">tblSupplierCustomerPSNs</td><td class="status-exist">⚠ קיים (Legacy)</td><td>יוחלף במאפיינים דינאמיים</td></tr>
+            <tr><td>מאפיינים — תבניות</td><td class="col-key">tblAttributeTemplates</td><td class="status-new">🆕 חדש</td><td>Admin מגדיר</td></tr>
+            <tr><td>מאפיינים — שדות</td><td class="col-key">tblAttributeFields</td><td class="status-new">🆕 חדש</td><td>6 DataTypes</td></tr>
+            <tr><td>מאפיינים — ערכי LIST</td><td class="col-key">tblAttributeFieldOptions</td><td class="status-new">🆕 חדש</td><td>—</td></tr>
+            <tr><td>קישור מאפיין↔מק"ט</td><td class="col-key">tblItemLinkAttributes</td><td class="status-new">🆕 חדש</td><td>נוצר ע"י המקטלג</td></tr>
+            <tr><td>ערכי מאפיינים</td><td class="col-key">tblItemLinkAttributeValues</td><td class="status-new">🆕 חדש</td><td>Typed EAV</td></tr>
+            <tr><td>תור מקטלג</td><td class="col-key">tblCatalogQueue</td><td class="status-new">🆕 חדש</td><td>כולל AI suggestions JSON</td></tr>
+            <tr><td>מסך ניהול תבניות</td><td>Angular Component</td><td class="status-new">🆕 חדש</td><td>ADMIN</td></tr>
+            <tr><td>מסך תור מקטלג</td><td>Angular Component</td><td class="status-new">🆕 חדש</td><td>+AI panel</td></tr>
+            <tr><td>כרטיס מק"ט מאושר</td><td>Angular Component</td><td class="status-new">🆕 חדש</td><td>—</td></tr>
+            <tr><td>AI Similarity API</td><td>Backend Route</td><td class="status-new">🆕 חדש</td><td>Connector 742aef38</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer role="contentinfo" style="margin-top:3rem; padding-top:1rem; border-top:1px solid var(--color-border); color:var(--color-text-muted); font-size:.82rem; text-align:center;">
+    ARCHEM — מסמך אפיון | גרסה 1.0 | יוני 2026 | סודי — לשימוש פנימי בלבד
+  </footer>
+
+</div>
+</body>
+</html>

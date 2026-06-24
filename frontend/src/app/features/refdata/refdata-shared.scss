@@ -1,0 +1,292 @@
+// ── Host fills page-content ───────────────────────────────────────────────────
+:host {
+  display: block;
+  height: 100%;
+}
+
+// ── Page layout ───────────────────────────────────────────────────────────────
+.page-wrap {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 20px 28px 16px;
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// Grid outer wrapper — takes remaining height after header + toolbar
+.grid-outer {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--sf-primary); }
+  h1 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--sf-text); }
+}
+
+.btn-new {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  background: var(--sf-primary); color: #fff;
+  border: none; border-radius: 8px;
+  font-size: .84rem; font-weight: 700;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  cursor: pointer; transition: background .13s;
+  letter-spacing: .01em;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { background: var(--sf-primary-hover); }
+  &::before { content: '+'; font-size: 1.1rem; font-weight: 900; margin-left: -2px; }
+}
+
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--sf-bg-card);
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 38px;
+}
+
+.search-icon { font-size: 18px; color: var(--sf-text-muted); }
+
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: .84rem;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  color: var(--sf-text);
+  direction: rtl;
+  width: 240px;
+  &::placeholder { color: var(--sf-text-muted); }
+}
+
+// ── State boxes ───────────────────────────────────────────────────────────────
+.loading-box {
+  display: flex; align-items: center; gap: 10px;
+  padding: 40px; color: var(--sf-text-muted); font-size: .9rem;
+  justify-content: center;
+}
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--sf-border);
+  border-top-color: var(--sf-primary);
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin .7s linear infinite;
+}
+
+.error-box {
+  padding: 16px 20px;
+  background: #fee2e2; color: #dc2626;
+  border-radius: 8px; font-size: .85rem;
+}
+
+// ── Grid RTL + fill height ────────────────────────────────────────────────────
+::ng-deep .rd-grid {
+  direction: rtl !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+::ng-deep .rd-grid .k-grid {
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+::ng-deep .rd-grid .k-pager,
+::ng-deep .rd-grid .k-pager-wrap {
+  direction: rtl !important;
+}
+::ng-deep .rd-grid .k-grid-header th.k-header {
+  background: var(--sf-grid-hd-bg) !important;
+  color: var(--sf-grid-hd-color) !important;
+  font-weight: 700 !important;
+  font-size: .78rem !important;
+  border-bottom: 2px solid var(--sf-grid-hd-border) !important;
+  border-color: var(--sf-grid-hd-border) !important;
+  text-align: right !important;
+}
+::ng-deep .rd-grid .k-grid-header { background: var(--sf-grid-hd-bg) !important; }
+::ng-deep .rd-grid .k-column-menu-button { color: var(--sf-grid-hd-color); opacity: .7; }
+::ng-deep .rd-grid td { text-align: right; }
+
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 3px 10px; border-radius: 99px; font-size: .72rem; font-weight: 600;
+}
+.badge-active   { background: #d1fae5; color: #059669; }
+.badge-inactive { background: #fee2e2; color: #dc2626; }
+.badge-yes      { background: #dbeafe; color: #1d4ed8; }
+
+// ── Action buttons (3-button standard: expand / edit / delete) ────────────────
+.action-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+%_action-btn-base {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  background: none; border: 1px solid var(--sf-border);
+  border-radius: 6px; cursor: pointer; color: var(--sf-text-muted);
+  transition: background .13s, color .13s, border-color .13s;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+
+.btn-expand {
+  @extend %_action-btn-base;
+  &:hover { background: var(--sf-bg-hover); color: var(--sf-text); border-color: var(--sf-text-muted); }
+}
+
+.btn-edit {
+  @extend %_action-btn-base;
+  &:hover { background: var(--sf-primary-light); color: var(--sf-primary); border-color: var(--sf-primary); }
+}
+
+.btn-delete {
+  @extend %_action-btn-base;
+  &:hover { background: #fee2e2; color: #dc2626; border-color: #dc2626; }
+}
+
+// ── Dialog form ───────────────────────────────────────────────────────────────
+.rd-form {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 4px 0;
+  direction: rtl;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+.form-row-1 { grid-template-columns: 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.form-group {
+  display: flex; flex-direction: column; gap: 4px;
+  &.required .form-label::after { content: ' *'; color: var(--sf-danger); }
+}
+
+.form-label {
+  font-size: .72rem; font-weight: 600;
+  color: var(--sf-text-secondary);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+
+.form-input {
+  padding: 8px 10px;
+  border: 1px solid var(--sf-border);
+  border-radius: 7px;
+  font-size: .84rem;
+  background: var(--sf-bg-card);
+  color: var(--sf-text);
+  outline: none;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  direction: rtl;
+  transition: border-color .15s;
+  &:focus { border-color: var(--sf-border-focus); }
+}
+
+.form-textarea {
+  @extend .form-input;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-err {
+  font-size: .7rem; color: var(--sf-danger); margin-top: 2px;
+}
+
+.form-static {
+  padding: 8px 10px;
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-border);
+  border-radius: 7px;
+  font-size: .84rem;
+  color: var(--sf-text-secondary);
+  direction: rtl;
+}
+
+.req { color: var(--sf-danger); }
+
+// ── Seg-ctrl ─────────────────────────────────────────────────────────────────
+.seg-ctrl {
+  display: inline-flex; direction: rtl; align-self: flex-start;
+  border: 1px solid var(--sf-border); border-radius: 8px; overflow: hidden;
+}
+
+.seg-btn {
+  padding: 7px 18px; font-size: .78rem; font-weight: 500;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  border: none; background: var(--sf-bg);
+  color: var(--sf-text-secondary); cursor: pointer;
+  transition: background .15s, color .15s;
+
+  & + & { border-inline-start: 1px solid var(--sf-border); }
+  &:hover:not(.seg-on):not(.seg-off) { background: var(--sf-bg-hover); color: var(--sf-text); }
+  &.seg-on  { background: #10b981; color: #fff; font-weight: 600; }
+  &.seg-off { background: #ef4444; color: #fff; font-weight: 600; }
+}
+
+// ── Dialog footer ─────────────────────────────────────────────────────────────
+::ng-deep .k-dialog-actions { direction: rtl !important; }
+
+.dialog-footer {
+  display: flex; align-items: center; gap: 8px; direction: rtl; width: 100%;
+}
+
+.btn-save {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 20px; background: #f97316; color: #fff;
+  border: none; border-radius: 8px; font-size: .84rem; font-weight: 700;
+  font-family: 'Noto Sans Hebrew', sans-serif; cursor: pointer;
+  &:hover:not(:disabled) { background: #ea6c0a; }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+
+.btn-cancel {
+  padding: 9px 18px; background: var(--sf-bg-card);
+  color: var(--sf-text-secondary); border: 1px solid var(--sf-border);
+  border-radius: 8px; font-size: .84rem;
+  font-family: 'Noto Sans Hebrew', sans-serif; cursor: pointer;
+  &:hover { background: var(--sf-bg-hover); color: var(--sf-text); }
+}
+
+.btn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

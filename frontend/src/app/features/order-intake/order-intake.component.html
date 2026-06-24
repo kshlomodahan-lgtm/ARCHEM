@@ -30,6 +30,14 @@
       }
     </button>
 
+    @if (selectedFile()) {
+      <button class="btn-pdf-toggle" type="button" [class.active]="showPdf()"
+              (click)="showPdf.set(!showPdf())">
+        <span class="material-icons">{{ showPdf() ? 'picture_as_pdf' : 'picture_as_pdf' }}</span>
+        תצוגת PDF:&nbsp;<strong>{{ showPdf() ? 'כן' : 'לא' }}</strong>
+      </button>
+    }
+
     @if (analyzeError()) {
       <div class="analyze-error">
         <span class="material-icons">error_outline</span>
@@ -39,10 +47,14 @@
 
   </div>
 
-  <!-- ── Result Panel ───────────────────────────────────────── -->
+  <!-- ── Result Split Layout ─────────────────────────────────── -->
   @if (result()) {
 
-    <div class="result-wrapper">
+    <div class="split-layout">
+
+      <!-- RIGHT pane: data (first child = right in RTL) ───────── -->
+      <div class="data-pane">
+      <div class="result-wrapper">
 
       <!-- Side nav + Content -->
       <div class="result-panel">
@@ -51,7 +63,7 @@
         <nav class="result-nav">
           @for (item of navItems; track item.id) {
             <button class="nav-item" [class.active]="activeSection() === item.id"
-                    (click)="activeSection.set(item.id)">
+                    (click)="changeSection(item.id)">
               <span class="material-icons nav-icon">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
               @if (item.id === 'lines') {
@@ -269,7 +281,24 @@
 
       </div>
 
-    </div>
+      </div><!-- /result-wrapper -->
+      </div><!-- /data-pane -->
+
+      <!-- LEFT pane: PDF viewer — shown only when showPdf() is true ──── -->
+      @if (showPdf()) {
+      <div class="pdf-pane">
+        <div class="pdf-toolbar">
+          <span class="material-icons pdf-icon">picture_as_pdf</span>
+          <span class="pdf-hint-text">{{ pdfHint() }}</span>
+        </div>
+        <app-pdf-viewer
+          [src]="pdfBlobUrl()"
+          [searchTerm]="pdfSearchTerm()">
+        </app-pdf-viewer>
+      </div>
+      }<!-- /showPdf -->
+
+    </div><!-- /split-layout -->
 
   }
 

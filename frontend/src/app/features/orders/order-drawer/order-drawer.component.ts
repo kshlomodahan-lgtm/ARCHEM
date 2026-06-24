@@ -21,7 +21,7 @@ export class OrderDrawerComponent {
 
   readonly statusLabels: Record<OrderStatus, string> = {
     active: 'פעיל', important: 'חשוב', frozen: 'מוקפא',
-    cancelled: 'בוטל', frame: 'מסגרת',
+    cancelled: 'בוטל', frame: 'מסגרת', inactive: 'לא פעיל',
   };
 
   readonly commLabels: Record<CommissionType, string> = {

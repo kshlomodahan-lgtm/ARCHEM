@@ -1,0 +1,85 @@
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-title"><mat-icon>currency_exchange</mat-icon><h1>שערי מטבע</h1></div>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap"><mat-icon class="search-icon">search</mat-icon>
+      <input class="search-input" type="text" placeholder="חיפוש לפי קוד / שם מטבע..." (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+  @if (loading()) { <div class="loading-box"><span class="spinner"></span> טוען...</div> }
+  @else if (error()) { <div class="error-box">{{ error() }}</div> }
+  @else {
+    <div class="grid-outer">
+    <kendo-grid class="rd-grid" [data]="{ data: pagedData, total: gridData.length }" [skip]="skip" [pageSize]="pageSize"
+      [pageable]="{ buttonCount:5, info:true, type:'numeric', pageSizes:[10,25,50] }"
+      [sortable]="{ mode:'single', allowUnsort:false }" [sort]="sort" [reorderable]="true" [resizable]="true" scrollable="scrollable"
+      (pageChange)="onPageChange($event)" (sortChange)="onSortChange($event)">
+      <kendo-grid-column field="CurrencyCode" title="קוד" [width]="80" />
+      <kendo-grid-column field="Symbol" title="סמל" [width]="60" />
+      <kendo-grid-column field="CurrencyName" title="מטבע" />
+      <kendo-grid-column field="RateToILS" title="שער (₪)" [width]="140">
+        <ng-template kendoGridCellTemplate let-item>
+          @if (item.RateToILS) {
+            <span class="rate-val">{{ item.RateToILS | number:'1.4-6' }}</span>
+          } @else {
+            <span class="no-rate">—</span>
+          }
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-column field="RateDate" title="תאריך עדכון" [width]="130">
+        <ng-template kendoGridCellTemplate let-item>
+          {{ item.RateDate ? (item.RateDate | date:'dd/MM/yyyy') : '—' }}
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-column field="Source" title="מקור" [width]="90" />
+      <kendo-grid-column title="" [width]="120" [sortable]="false" [resizable]="false" [columnMenu]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <div class="action-group">
+            <button class="btn-expand" (click)="openView(item)" title="הצג פרטים"><mat-icon>visibility</mat-icon></button>
+            <button class="btn-edit" (click)="openEdit(item)" title="עדכן שער"><mat-icon>edit</mat-icon></button>
+            <button class="btn-delete" [disabled]="true" style="opacity:0.3" title="אין השבתה למטבעות"><mat-icon>delete_outline</mat-icon></button>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-messages pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="רשומות" noRecords="אין מטבעות פעילים" loading="טוען..." />
+    </kendo-grid>
+    </div>
+  }
+</div>
+
+@if (showDialog()) {
+  <kendo-dialog [title]="viewMode() ? 'פרטי שער — ' + (editItem()?.CurrencyCode || '') : 'עדכון שער — ' + (editItem()?.CurrencyCode || '')" [width]="400" (close)="closeDialog()">
+    <form [formGroup]="form" class="rd-form">
+      <div class="form-row form-row-1">
+        <div class="form-group">
+          <label class="form-label">מטבע</label>
+          <div class="readonly-field">{{ editItem()?.CurrencyCode }} — {{ editItem()?.CurrencyName }}</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group required">
+          <label class="form-label">תאריך</label>
+          <input class="form-input" formControlName="rateDate" type="date" dir="ltr" />
+          @if (form.get('rateDate')?.invalid && form.get('rateDate')?.touched) { <span class="form-err">שדה חובה</span> }
+        </div>
+        <div class="form-group required">
+          <label class="form-label">שער (₪)</label>
+          <input class="form-input" formControlName="rateToILS" type="number" step="0.0001" min="0" dir="ltr" placeholder="3.7500" />
+          @if (form.get('rateToILS')?.invalid && form.get('rateToILS')?.touched) { <span class="form-err">ערך חובה</span> }
+        </div>
+      </div>
+    </form>
+    <kendo-dialog-actions>
+      <div class="dialog-footer">
+        @if (!viewMode()) {
+          <button class="btn-save" (click)="save()" [disabled]="saving()">@if (saving()) { <span class="btn-spinner"></span> } @else { ✓ } שמור</button>
+        }
+        @if (viewMode()) {
+          <button class="btn-save" (click)="switchToEdit()">✏ ערוך</button>
+        }
+        <button class="btn-cancel" (click)="closeDialog()">{{ viewMode() ? 'סגור' : 'ביטול' }}</button>
+      </div>
+    </kendo-dialog-actions>
+  </kendo-dialog>
+}

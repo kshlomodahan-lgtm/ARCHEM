@@ -57,6 +57,32 @@
   &:focus { border-color: var(--sf-border-focus); }
 }
 
+.pass-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pass-input {
+  width: 100%;
+  padding-inline-start: 40px;
+}
+
+.pass-eye {
+  position: absolute;
+  inset-inline-start: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--sf-text-muted);
+  display: flex;
+  align-items: center;
+  transition: color .13s;
+  &:hover { color: var(--sf-text); }
+  .material-icons { font-size: 18px; }
+}
+
 .login-error {
   background: #fef2f2;
   border: 1px solid #fecaca;

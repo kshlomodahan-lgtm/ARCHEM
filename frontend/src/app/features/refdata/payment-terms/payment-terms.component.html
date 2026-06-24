@@ -1,0 +1,71 @@
+﻿<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-title"><mat-icon>payments</mat-icon><h1>תנאי תשלום</h1></div>
+    <button class="btn-new" (click)="openNew()"><mat-icon>add</mat-icon> תנאי חדש</button>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap"><mat-icon class="search-icon">search</mat-icon>
+      <input class="search-input" type="text" placeholder="חיפוש תנאי תשלום..." (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+  @if (loading()) { <div class="loading-box"><span class="spinner"></span> טוען...</div> }
+  @else if (error()) { <div class="error-box">{{ error() }}</div> }
+  @else {
+    <div class="grid-outer">
+    <kendo-grid class="rd-grid" [data]="{ data: pagedData, total: gridData.length }" [skip]="skip" [pageSize]="pageSize"
+      [pageable]="{ buttonCount:5, info:true, type:'numeric', pageSizes:[10,25,50] }"
+      [sortable]="{ mode:'single', allowUnsort:false }" [sort]="sort" [reorderable]="true" [resizable]="true" scrollable="scrollable"
+      (pageChange)="onPageChange($event)" (sortChange)="onSortChange($event)">
+      <kendo-grid-column field="Description1" title="תיאור"></kendo-grid-column>
+      <kendo-grid-column field="Description2" title="תיאור נוסף" [width]="180"></kendo-grid-column>
+      <kendo-grid-column field="CreditDays" title="ימי אשראי" [width]="100"></kendo-grid-column>
+
+      <kendo-grid-column title="" [width]="120" [sortable]="false" [resizable]="false" [columnMenu]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <div class="action-group">
+            <button class="btn-expand" (click)="openView(item)" title="הצג פרטים"><mat-icon>visibility</mat-icon></button>
+            <button class="btn-edit" (click)="openEdit(item)" title="עריכה"><mat-icon>edit</mat-icon></button>
+            <button class="btn-delete" (click)="deleteItem(item.PaymentTermID)" title="מחיקה"><mat-icon>delete_outline</mat-icon></button>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-messages pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="רשומות" noRecords="לא נמצאו רשומות" loading="טוען..." />
+    </kendo-grid>
+    </div>
+  }
+</div>
+@if (showDialog()) {
+  <kendo-dialog [title]="viewMode() ? 'פרטי ' + (editItem()?.Description1 || '') : (editItem() ? 'עריכת תנאי תשלום' : 'תנאי תשלום חדש')" [width]="460" (close)="closeDialog()">
+    <form [formGroup]="form" class="rd-form">
+      <div class="form-group">
+        <label class="form-label">תיאור <span class="req">*</span></label>
+        <input class="form-input" formControlName="description1" type="text" />
+        @if (form.get('description1')?.invalid && form.get('description1')?.touched) {
+          <div class="form-err">שדה חובה</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">תיאור נוסף</label>
+        <input class="form-input" formControlName="description2" type="text" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">ימי אשראי <span class="req">*</span></label>
+        <input class="form-input" formControlName="creditDays" type="number" />
+        @if (form.get('creditDays')?.invalid && form.get('creditDays')?.touched) {
+          <div class="form-err">שדה חובה</div>
+        }
+      </div>
+    </form>
+    <kendo-dialog-actions>
+      <div class="dialog-footer">
+        @if (!viewMode()) {
+          <button class="btn-save" (click)="save()" [disabled]="saving()">@if (saving()) { <span class="btn-spinner"></span> } @else { ✓ } שמור</button>
+        }
+        @if (viewMode()) {
+          <button class="btn-save" (click)="switchToEdit()">✏ ערוך</button>
+        }
+        <button class="btn-cancel" (click)="closeDialog()">{{ viewMode() ? 'סגור' : 'ביטול' }}</button>
+      </div>
+    </kendo-dialog-actions>
+  </kendo-dialog>
+}

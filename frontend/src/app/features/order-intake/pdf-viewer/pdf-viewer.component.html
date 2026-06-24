@@ -1,0 +1,22 @@
+<div class="zoom-bar">
+  <button class="zoom-btn" [disabled]="!canZoomOut" (click)="zoomOut()" title="הקטן">−</button>
+  <span class="zoom-pct">{{ zoomPct }}%</span>
+  <button class="zoom-btn" [disabled]="!canZoomIn"  (click)="zoomIn()"  title="הגדל">+</button>
+  <button class="zoom-btn reset-btn" (click)="resetZoom()" title="התאם לרוחב">⊡</button>
+</div>
+
+<div class="pdf-wrap" #pdfWrap>
+  @if (loading) {
+    <div class="pdf-status">
+      <span class="material-icons spin">refresh</span>
+      טוען PDF...
+    </div>
+  }
+  @if (loadError) {
+    <div class="pdf-status error">{{ loadError }}</div>
+  }
+  @if (debugInfo) {
+    <div class="pdf-debug">{{ debugInfo }}</div>
+  }
+  <div class="pdf-pages" #pagesContainer></div>
+</div>

@@ -4,6 +4,13 @@ const cors    = require('cors');
 const helmet  = require('helmet');
 const path    = require('path');
 
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.message);
+});
+
 const app = express();
 app.set('trust proxy', true);
 
@@ -25,6 +32,9 @@ app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/meta',         require('./routes/meta'));
 app.use('/api/order-intake', require('./routes/orderIntake'));
+app.use('/api/refdata',      require('./routes/refdata'));
+app.use('/api/attributes',   require('./routes/attributes'));
+app.use('/api/catalog',      require('./routes/catalog'));
 
 app.use('/api/{*path}', (_req, res) =>
   res.status(404).json({ success: false, message: 'Endpoint not found' })

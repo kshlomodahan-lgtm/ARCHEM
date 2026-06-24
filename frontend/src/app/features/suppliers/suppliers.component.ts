@@ -2,7 +2,7 @@ import { Component, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  GridModule, PageChangeEvent, CellClickEvent, GridComponent,
+  GridModule, PageChangeEvent, GridComponent,
 } from '@progress/kendo-angular-grid';
 import { SortDescriptor, orderBy } from '@progress/kendo-data-query';
 import { MatIconModule } from '@angular/material/icon';
@@ -107,10 +107,16 @@ export class SuppliersComponent implements OnInit {
   openNew()   { this.dialogId.set(null); this.showDialog.set(true); }
   openEdit(s: SupplierListItem) { this.dialogId.set(s.supplierID); this.showDialog.set(true); }
 
-  onCellClick(e: CellClickEvent) {
-    const target = e.originalEvent?.target as HTMLElement;
-    if (target?.closest('.k-checkbox-wrap') || target?.closest('.grid-act-btn')) return;
-    this.openEdit(e.dataItem as SupplierListItem);
+  onRowDblClick(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.closest('.k-checkbox-wrap, .grid-act-btn')) return;
+    const tr = target.closest('tr.k-master-row') as HTMLElement;
+    if (!tr) return;
+    const tbody = tr.closest('tbody');
+    if (!tbody) return;
+    const idx = Array.from(tbody.querySelectorAll('tr.k-master-row')).indexOf(tr);
+    if (idx < 0 || idx >= this.pagedData.length) return;
+    this.openEdit(this.pagedData[idx]);
   }
 
   toggleActive(s: SupplierListItem) {

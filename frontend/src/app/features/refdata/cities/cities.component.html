@@ -1,0 +1,87 @@
+﻿<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-title"><mat-icon>location_city</mat-icon><h1>ערים</h1></div>
+    <button class="btn-new" (click)="openNew()"><mat-icon>add</mat-icon> עיר חדשה</button>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap"><mat-icon class="search-icon">search</mat-icon>
+      <input class="search-input" type="text" placeholder="חיפוש עיר..." (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+  @if (loading()) { <div class="loading-box"><span class="spinner"></span> טוען...</div> }
+  @else if (error()) { <div class="error-box">{{ error() }}</div> }
+  @else {
+    <div class="grid-outer">
+    <kendo-grid class="rd-grid" [data]="{ data: pagedData, total: gridData.length }" [skip]="skip" [pageSize]="pageSize"
+      [pageable]="{ buttonCount:5, info:true, type:'numeric', pageSizes:[10,25,50] }"
+      [sortable]="{ mode:'single', allowUnsort:false }" [sort]="sort" [reorderable]="true" [resizable]="true" scrollable="scrollable"
+      (pageChange)="onPageChange($event)" (sortChange)="onSortChange($event)">
+      <kendo-grid-column field="NameHE" title="שם עברית"></kendo-grid-column>
+      <kendo-grid-column field="NameEN" title="שם אנגלית" [width]="160"></kendo-grid-column>
+      <kendo-grid-column field="CountryNameHE" title="מדינה" [width]="150"></kendo-grid-column>
+      <kendo-grid-column field="PostalCode" title="מיקוד" [width]="100"></kendo-grid-column>
+      <kendo-grid-column field="IsActive" title="סטטוס" [width]="90" [sortable]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <span class="badge" [class.badge-active]="item.IsActive" [class.badge-inactive]="!item.IsActive">{{ item.IsActive ? 'פעיל' : 'מושהה' }}</span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <kendo-grid-column title="" [width]="120" [sortable]="false" [resizable]="false" [columnMenu]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <div class="action-group">
+            <button class="btn-expand" (click)="openView(item)" title="הצג פרטים"><mat-icon>visibility</mat-icon></button>
+            <button class="btn-edit" (click)="openEdit(item)" title="עריכה"><mat-icon>edit</mat-icon></button>
+            <button class="btn-delete" (click)="deactivate(item)" title="השבתה"><mat-icon>delete_outline</mat-icon></button>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-messages pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="רשומות" noRecords="לא נמצאו רשומות" loading="טוען..." />
+    </kendo-grid>
+    </div>
+  }
+</div>
+@if (showDialog()) {
+  <kendo-dialog [title]="viewMode() ? 'פרטי ' + (editItem()?.NameHE || '') : (editItem() ? 'עריכת עיר' : 'עיר חדשה')" [width]="460" (close)="closeDialog()">
+    <form [formGroup]="form" class="rd-form">
+      <div class="form-group">
+        <label class="form-label">קוד מדינה <span class="req">*</span></label>
+        <input class="form-input" formControlName="countryId" type="number" />
+        @if (form.get('countryId')?.invalid && form.get('countryId')?.touched) {
+          <div class="form-err">שדה חובה</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">שם עברית <span class="req">*</span></label>
+        <input class="form-input" formControlName="nameHE" type="text" />
+        @if (form.get('nameHE')?.invalid && form.get('nameHE')?.touched) {
+          <div class="form-err">שדה חובה</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">שם אנגלית</label>
+        <input class="form-input" formControlName="nameEN" type="text" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">מיקוד</label>
+        <input class="form-input" formControlName="postalCode" type="text" />
+      </div>
+      <div class="form-group"><label class="form-label">סטטוס</label>
+        <div class="seg-ctrl">
+          <button type="button" class="seg-btn" [class.seg-on]="form.get('isActive')?.value" (click)="form.get('isActive')?.setValue(true)">✓ פעיל</button>
+          <button type="button" class="seg-btn" [class.seg-off]="!form.get('isActive')?.value" (click)="form.get('isActive')?.setValue(false)">✗ מושהה</button>
+        </div>
+      </div>
+    </form>
+    <kendo-dialog-actions>
+      <div class="dialog-footer">
+        @if (!viewMode()) {
+          <button class="btn-save" (click)="save()" [disabled]="saving()">@if (saving()) { <span class="btn-spinner"></span> } @else { ✓ } שמור</button>
+        }
+        @if (viewMode()) {
+          <button class="btn-save" (click)="switchToEdit()">✏ ערוך</button>
+        }
+        <button class="btn-cancel" (click)="closeDialog()">{{ viewMode() ? 'סגור' : 'ביטול' }}</button>
+      </div>
+    </kendo-dialog-actions>
+  </kendo-dialog>
+}

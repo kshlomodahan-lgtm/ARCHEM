@@ -1,0 +1,117 @@
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-title">
+      <mat-icon>local_police</mat-icon>
+      <h1>עמילי מכס</h1>
+    </div>
+    <button class="btn-new" (click)="openNew()"><mat-icon>add</mat-icon> עמיל חדש</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input class="search-input" type="text" placeholder="חיפוש לפי שם / רישיון..."
+             (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+
+  @if (loading()) { <div class="loading-box"><span class="spinner"></span> טוען...</div> }
+  @else if (error()) { <div class="error-box">{{ error() }}</div> }
+  @else {
+    <div class="grid-outer">
+    <kendo-grid class="rd-grid"
+      [data]="{ data: pagedData, total: gridData.length }"
+      [skip]="skip" [pageSize]="pageSize"
+      [pageable]="{ buttonCount:5, info:true, type:'numeric', pageSizes:[10,25,50] }"
+      [sortable]="{ mode:'single', allowUnsort:false }"
+      [sort]="sort" [reorderable]="true" [resizable]="true" scrollable="scrollable"
+      (pageChange)="onPageChange($event)" (sortChange)="onSortChange($event)">
+      <kendo-grid-column field="NameHE" title="שם" />
+      <kendo-grid-column field="NameEN" title="Name" [width]="180" />
+      <kendo-grid-column field="LicenseNo" title="מספר רישיון" [width]="130" />
+      <kendo-grid-column field="ContactName" title="איש קשר" [width]="140" />
+      <kendo-grid-column field="Phone" title="טלפון" [width]="120" />
+      <kendo-grid-column field="Email" title="אימייל" [width]="180" />
+      <kendo-grid-column field="IsActive" title="סטטוס" [width]="90" [sortable]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <span class="badge" [class.badge-active]="item.IsActive" [class.badge-inactive]="!item.IsActive">{{ item.IsActive ? 'פעיל' : 'מושהה' }}</span>
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-column title="" [width]="120" [sortable]="false" [resizable]="false" [columnMenu]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <div class="action-group">
+            <button class="btn-expand" (click)="openView(item)" title="הצג פרטים"><mat-icon>visibility</mat-icon></button>
+            <button class="btn-edit" (click)="openEdit(item)" title="עריכה"><mat-icon>edit</mat-icon></button>
+            <button class="btn-delete" (click)="deactivate(item)" title="השבתה"><mat-icon>delete_outline</mat-icon></button>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-messages pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="רשומות" noRecords="לא נמצאו רשומות" loading="טוען..." />
+    </kendo-grid>
+    </div>
+  }
+</div>
+
+@if (showDialog()) {
+  <kendo-dialog [title]="viewMode() ? 'פרטי ' + (editItem()?.NameHE || '') : (editItem() ? 'עריכת עמיל מכס' : 'עמיל מכס חדש')" [width]="560" (close)="closeDialog()">
+    <form [formGroup]="form" class="rd-form">
+      <div class="form-row">
+        <div class="form-group required">
+          <label class="form-label">שם בעברית</label>
+          <input class="form-input" formControlName="nameHE" />
+          @if (form.get('nameHE')?.invalid && form.get('nameHE')?.touched) { <span class="form-err">שדה חובה</span> }
+        </div>
+        <div class="form-group">
+          <label class="form-label">שם באנגלית</label>
+          <input class="form-input" formControlName="nameEN" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">מספר רישיון</label>
+          <input class="form-input" formControlName="licenseNo" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">איש קשר</label>
+          <input class="form-input" formControlName="contactName" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">טלפון</label>
+          <input class="form-input" formControlName="phone" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">דוא"ל</label>
+          <input class="form-input" formControlName="email" type="email" dir="ltr" />
+        </div>
+      </div>
+      <div class="form-row form-row-1">
+        <div class="form-group">
+          <label class="form-label">כתובת</label>
+          <input class="form-input" formControlName="address" />
+        </div>
+      </div>
+      <div class="form-row form-row-1">
+        <div class="form-group">
+          <label class="form-label">סטטוס</label>
+          <div class="seg-ctrl">
+            <button type="button" class="seg-btn" [class.seg-on]="form.get('isActive')?.value" (click)="form.get('isActive')?.setValue(true)">✓ פעיל</button>
+            <button type="button" class="seg-btn" [class.seg-off]="!form.get('isActive')?.value" (click)="form.get('isActive')?.setValue(false)">✗ מושהה</button>
+          </div>
+        </div>
+      </div>
+    </form>
+    <kendo-dialog-actions>
+      <div class="dialog-footer">
+        @if (!viewMode()) {
+          <button class="btn-save" (click)="save()" [disabled]="saving()">@if (saving()) { <span class="btn-spinner"></span> } @else { ✓ } שמור</button>
+        }
+        @if (viewMode()) {
+          <button class="btn-save" (click)="switchToEdit()">✏ ערוך</button>
+        }
+        <button class="btn-cancel" (click)="closeDialog()">{{ viewMode() ? 'סגור' : 'ביטול' }}</button>
+      </div>
+    </kendo-dialog-actions>
+  </kendo-dialog>
+}

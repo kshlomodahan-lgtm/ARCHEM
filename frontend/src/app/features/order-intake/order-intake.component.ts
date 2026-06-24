@@ -1,7 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
+import { PdfViewerComponent } from './pdf-viewer/pdf-viewer.component';
 
 export interface IntakeHeader {
   poNumber: string | null;
@@ -81,16 +82,21 @@ interface NavItem     { id: string; label: string; icon: string; }
 @Component({
   selector: 'app-order-intake',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, PdfViewerComponent],
   templateUrl: './order-intake.component.html',
   styleUrl: './order-intake.component.scss',
 })
-export class OrderIntakeComponent {
+export class OrderIntakeComponent implements OnDestroy {
 
   selectedFile = signal<File | null>(null);
   analyzing    = signal(false);
   analyzeError = signal('');
   result       = signal<IntakeResult | null>(null);
+
+  pdfBlobUrl    = signal('');
+  pdfSearchTerm = signal('');
+  pdfHint       = signal('');
+  showPdf       = signal(false);
 
   activeSection = signal('header');
 
@@ -116,12 +122,28 @@ export class OrderIntakeComponent {
 
   constructor(private http: HttpClient) {}
 
+  ngOnDestroy() {
+    const url = this.pdfBlobUrl();
+    if (url) URL.revokeObjectURL(url); // release blob from memory
+  }
+
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file  = input.files?.[0] ?? null;
     if (file && file.type !== 'application/pdf') {
       this.analyzeError.set('יש לבחור קובץ PDF בלבד');
       return;
+    }
+    const old = this.pdfBlobUrl();
+    if (old) URL.revokeObjectURL(old);
+    if (file) {
+      this.pdfBlobUrl.set(URL.createObjectURL(file));
+      this.pdfSearchTerm.set('');
+      this.pdfHint.set(file.name);
+    } else {
+      this.pdfBlobUrl.set('');
+      this.pdfSearchTerm.set('');
+      this.pdfHint.set('');
     }
     this.selectedFile.set(file);
     this.analyzeError.set('');
@@ -148,12 +170,51 @@ export class OrderIntakeComponent {
         this.result.set(r.data);
         this._buildFields(r.data);
         this.activeSection.set('header');
+        this._refreshPdfSearch('header');
       },
       error: (err: any) => {
         this.analyzing.set(false);
         this.analyzeError.set(err?.error?.message || 'שגיאה בניתוח המסמך');
       },
     });
+  }
+
+  changeSection(id: string) {
+    this.activeSection.set(id);
+    this._refreshPdfSearch(id);
+  }
+
+  private _refreshPdfSearch(section: string) {
+    if (!this.pdfBlobUrl()) return;
+    const r = this.result();
+    let term = '';
+    let hint = '';
+    switch (section) {
+      case 'header':
+        term = r?.header?.poNumber || '';
+        hint = term ? `כותרת ההזמנה — מספר: ${term}` : 'כותרת ההזמנה';
+        break;
+      case 'from':
+        term = r?.fromParty?.companyName || '';
+        hint = term ? `מפיק: ${term}` : 'מפיק ההזמנה';
+        break;
+      case 'to':
+        term = r?.toParty?.companyName || '';
+        hint = term ? `ספק: ${term}` : 'ספק';
+        break;
+      case 'lines':
+        if (r?.lines?.length) {
+          // Use up to 4 unique part numbers so the viewer scrolls to the lines table
+          const parts = [...new Set(
+            r.lines.map(l => l.partNumber).filter((p): p is string => !!p && p.length >= 4)
+          )].slice(0, 4).join(' ');
+          term = parts;
+        }
+        hint = r ? `${r.lines.length} שורות הזמנה` : 'שורות';
+        break;
+    }
+    this.pdfHint.set(hint);
+    this.pdfSearchTerm.set(term);
   }
 
   private _buildFields(d: IntakeResult) {

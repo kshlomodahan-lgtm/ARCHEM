@@ -2,20 +2,22 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatIconModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
 export class LoginComponent {
-  username = '';
-  password = '';
-  loading  = signal(false);
-  error    = signal('');
+  username    = 'admin';
+  password    = '';
+  showPass    = false;
+  loading     = signal(false);
+  error       = signal('');
 
   constructor(private auth: AuthService, private router: Router) {}
 

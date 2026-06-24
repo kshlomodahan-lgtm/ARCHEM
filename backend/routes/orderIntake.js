@@ -129,7 +129,7 @@ async function _lookupItems(pool, lines) {
             RTRIM(Shem_Parit) AS Shem_Parit,
             RTRIM(Makat_Sapak) AS Makat_Sapak,
             RTRIM(Unit) AS Unit
-          FROM B_PRITIM
+          FROM DB_ARACHIM_TEST.dbo.B_PRITIM
           WHERE RTRIM(Makat_Sapak) = @pn OR CAST(Item_No AS NVARCHAR(20)) = @pn
           ORDER BY
             CASE WHEN RTRIM(Makat_Sapak) = @pn THEN 0 ELSE 1 END,
@@ -148,7 +148,7 @@ async function _lookupItems(pool, lines) {
             RTRIM(Shem_Parit) AS Shem_Parit,
             RTRIM(Makat_Sapak) AS Makat_Sapak,
             RTRIM(Unit) AS Unit
-          FROM B_PRITIM
+          FROM DB_ARACHIM_TEST.dbo.B_PRITIM
           WHERE Shem_Parit LIKE @d
           ORDER BY Item_No
         `);
@@ -273,8 +273,8 @@ ${text}`;
 function _callClaude(apiKey, prompt) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     });
     const opts = {

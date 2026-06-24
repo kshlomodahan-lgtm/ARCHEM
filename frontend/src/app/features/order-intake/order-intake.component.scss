@@ -1,10 +1,21 @@
+// Let the page fill the shell content area without outer scroll
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .intake-page {
-  padding: 20px 24px 0;
+  padding: 20px 24px 16px;
   direction: rtl;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -393,3 +404,87 @@
 .ltr { direction: ltr; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+// ── PDF Preview Toggle ────────────────────────────────────────────────
+.btn-pdf-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  background: var(--sf-bg);
+  color: var(--sf-text-secondary);
+  font-size: .82rem;
+  font-family: 'Noto Sans Hebrew', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .14s, background .14s, color .14s;
+  flex-shrink: 0;
+
+  .material-icons { font-size: 16px; color: #ef4444; }
+
+  &:hover { border-color: var(--sf-primary); color: var(--sf-primary); }
+
+  &.active {
+    border-color: var(--sf-primary);
+    background: var(--sf-primary-light);
+    color: var(--sf-primary);
+  }
+}
+
+// ── Split Layout ──────────────────────────────────────────────────────
+.split-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.data-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── PDF Pane ──────────────────────────────────────────────────────────
+.pdf-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sf-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+
+  app-pdf-viewer {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--sf-bg-card);
+  border-bottom: 1px solid var(--sf-border);
+  direction: rtl;
+  flex-shrink: 0;
+}
+
+.pdf-icon { font-size: 18px; color: #ef4444; flex-shrink: 0; }
+
+.pdf-hint-text {
+  font-size: .78rem;
+  color: var(--sf-text-secondary);
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

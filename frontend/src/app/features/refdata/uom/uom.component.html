@@ -1,0 +1,84 @@
+﻿<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-title"><mat-icon>straighten</mat-icon><h1>יחידות מידה</h1></div>
+    <button class="btn-new" (click)="openNew()"><mat-icon>add</mat-icon> יחידה חדשה</button>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap"><mat-icon class="search-icon">search</mat-icon>
+      <input class="search-input" type="text" placeholder="חיפוש יחידת מידה..." (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+  @if (loading()) { <div class="loading-box"><span class="spinner"></span> טוען...</div> }
+  @else if (error()) { <div class="error-box">{{ error() }}</div> }
+  @else {
+    <div class="grid-outer">
+    <kendo-grid class="rd-grid" [data]="{ data: pagedData, total: gridData.length }" [skip]="skip" [pageSize]="pageSize"
+      [pageable]="{ buttonCount:5, info:true, type:'numeric', pageSizes:[10,25,50] }"
+      [sortable]="{ mode:'single', allowUnsort:false }" [sort]="sort" [reorderable]="true" [resizable]="true" scrollable="scrollable"
+      (pageChange)="onPageChange($event)" (sortChange)="onSortChange($event)">
+      <kendo-grid-column field="UOM_UnitDescShort" title="קוד קצר" [width]="100"></kendo-grid-column>
+      <kendo-grid-column field="UOM_UnitDesc" title="תיאור"></kendo-grid-column>
+      <kendo-grid-column field="UOM_Order" title="סדר" [width]="80"></kendo-grid-column>
+      <kendo-grid-column field="UOM_IsActive" title="סטטוס" [width]="90" [sortable]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <span class="badge" [class.badge-active]="item.UOM_IsActive" [class.badge-inactive]="!item.UOM_IsActive">{{ item.UOM_IsActive ? 'פעיל' : 'מושהה' }}</span>
+        </ng-template>
+      </kendo-grid-column>
+
+      <kendo-grid-column title="" [width]="120" [sortable]="false" [resizable]="false" [columnMenu]="false">
+        <ng-template kendoGridCellTemplate let-item>
+          <div class="action-group">
+            <button class="btn-expand" (click)="openView(item)" title="הצג פרטים"><mat-icon>visibility</mat-icon></button>
+            <button class="btn-edit" (click)="openEdit(item)" title="עריכה"><mat-icon>edit</mat-icon></button>
+            <button class="btn-delete" (click)="deactivate(item)" title="השבתה"><mat-icon>delete_outline</mat-icon></button>
+          </div>
+        </ng-template>
+      </kendo-grid-column>
+      <kendo-grid-messages pagerItemsPerPage="שורות בעמוד" pagerOf="מתוך" pagerItems="רשומות" noRecords="לא נמצאו רשומות" loading="טוען..." />
+    </kendo-grid>
+    </div>
+  }
+</div>
+@if (showDialog()) {
+  <kendo-dialog [title]="viewMode() ? 'פרטי ' + (editItem()?.UOM_UnitDescShort || '') : (editItem() ? 'עריכת יחידת מידה' : 'יחידת מידה חדשה')" [width]="460" (close)="closeDialog()">
+    <form [formGroup]="form" class="rd-form">
+      <div class="form-group">
+        <label class="form-label">קוד קצר <span class="req">*</span></label>
+        <input class="form-input" formControlName="shortDesc" type="text" />
+        @if (form.get('shortDesc')?.invalid && form.get('shortDesc')?.touched) {
+          <div class="form-err">שדה חובה</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">תיאור מלא <span class="req">*</span></label>
+        <input class="form-input" formControlName="fullDesc" type="text" />
+        @if (form.get('fullDesc')?.invalid && form.get('fullDesc')?.touched) {
+          <div class="form-err">שדה חובה</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">סדר</label>
+        <input class="form-input" formControlName="sortOrder" type="number" />
+      </div>
+      @if (editItem()) {
+        <div class="form-group"><label class="form-label">סטטוס</label>
+          <div class="seg-ctrl">
+            <button type="button" class="seg-btn" [class.seg-on]="form.get('isActive')?.value" (click)="form.get('isActive')?.setValue(true)">✓ פעיל</button>
+            <button type="button" class="seg-btn" [class.seg-off]="!form.get('isActive')?.value" (click)="form.get('isActive')?.setValue(false)">✗ מושהה</button>
+          </div>
+        </div>
+      }
+    </form>
+    <kendo-dialog-actions>
+      <div class="dialog-footer">
+        @if (!viewMode()) {
+          <button class="btn-save" (click)="save()" [disabled]="saving()">@if (saving()) { <span class="btn-spinner"></span> } @else { ✓ } שמור</button>
+        }
+        @if (viewMode()) {
+          <button class="btn-save" (click)="switchToEdit()">✏ ערוך</button>
+        }
+        <button class="btn-cancel" (click)="closeDialog()">{{ viewMode() ? 'סגור' : 'ביטול' }}</button>
+      </div>
+    </kendo-dialog-actions>
+  </kendo-dialog>
+}
